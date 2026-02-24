@@ -3,6 +3,6 @@ EcoPoint is a gamified web-based waste management platform that integrates Artif
 The platform encourages users to manage waste responsibly by combining smart waste classification, real-time cloud infrastructure, and reward-based gamification mechanisms.
 
 Kelompok EcoPoint 
-Ketua Kelompok : Fahmi Irfan Faiz 
-Anggota 1 : Benjamin Sigit
-Anggota 2 : Reza Hanif Firmansyah
+Ketua Kelompok : <br> 
+Anggota 1 : <br>
+Anggota 2 : <br>
