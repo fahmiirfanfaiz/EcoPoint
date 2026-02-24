@@ -4,5 +4,5 @@ The platform encourages users to manage waste responsibly by combining smart was
 
 Kelompok EcoPoint <br>
 Ketua Kelompok : <br> 
-Anggota 1 : <br>
+Anggota 1 : Reza Hanif Firmansyah 23/522571/TK/57700 <br>
 Anggota 2 : <br>
