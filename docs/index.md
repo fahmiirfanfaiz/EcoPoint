@@ -1,3 +1,5 @@
+# **EcoPoint**
+
 ## **Kelompok 23**
 
 - Fahmi Irfan Faiz - 23/520563/TK/57396
@@ -8,5 +10,6 @@ Proyek Senior Teknologi Informasi
 
 Departemen Teknik Elektro dan Teknologi Informasi, Fakultas Teknik, Universitas Gadjah Mada
 
-## **Praktikum**
-* [Modul 1](./modul_1.md)
+## **Daftar Modul**
+
+- [Modul 1](./modul_1.md)
