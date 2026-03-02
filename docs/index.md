@@ -13,3 +13,4 @@ Departemen Teknik Elektro dan Teknologi Informasi, Fakultas Teknik, Universitas 
 ## **Daftar Modul**
 
 - [Modul 1](./modul_1.md)
+- [Modul 2](./modul_2.md)

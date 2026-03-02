@@ -133,3 +133,5 @@ Keunggulan mereka adalah kapabilitas logistik dan layanan komersial. Nilai unik 
 Kekuatan mereka adalah kemampuan komunikasi dan mobilisasi. Nilai unik aplikasi kami adalah memformalisasi partisipasi, menambah elemen economy, reward, dan analitik. Sehingga aktivitas komunitas bisa diubah menjadi data operasional dan dampak yang terukur, serta diintegrasikan dengan bank sampah/pihak pengolah.
 
 ---
+
+[← Kembali ke halaman utama](index.md)
