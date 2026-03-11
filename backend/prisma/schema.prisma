@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Users {
+  user_id       String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nama          String
+  nim           String          @unique
+  password      String          @default("")
+  total_poin    BigInt          @default(0)
+  created_at    DateTime        @default(now()) @db.Timestamp(6)
+  role          String          @default("'mahasiswa'")
+  email         String          @unique
+  notifications notifications[]
+  redemptions   redemptions[]
+  user_badges   user_badges[]
+  waste_reports waste_reports[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model badges {
+  badges_id   String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nama_badge  String        @unique
+  deskripsi   String
+  syarat_poin BigInt        @default(0)
+  user_badges user_badges[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model notifications {
+  notifications_id String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id          String   @db.Uuid
+  pesan            String
+  is_read          Boolean  @default(false)
+  created_at       DateTime @default(now()) @db.Timestamp(6)
+  Users            Users    @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@id([notifications_id, user_id])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model redemptions {
+  redemption_id  String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id        String   @db.Uuid
+  reward_id      String   @db.Uuid
+  poin_digunakan BigInt
+  redeemed_at    DateTime @default(now()) @db.Timestamp(6)
+  rewards        rewards  @relation(fields: [reward_id], references: [reward_id])
+  Users          Users    @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@id([redemption_id, user_id, reward_id])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model rewards {
+  reward_id       String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nama_reward     String        @unique
+  deskripsi       String
+  poin_dibutuhkan BigInt
+  stok            BigInt        @default(0)
+  is_active       Boolean       @default(true)
+  redemptions     redemptions[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_badges {
+  user_id   String   @db.Uuid
+  badges_id String   @db.Uuid
+  earned_at DateTime @default(now()) @db.Timestamp(6)
+  badges    badges   @relation(fields: [badges_id], references: [badges_id])
+  Users     Users    @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@id([user_id, badges_id])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model waste_reports {
+  report_id       BigInt   @default(autoincrement())
+  user_id         String   @db.Uuid
+  foto_url        String
+  kategori_user   String
+  kategori_ai     String?
+  status_validasi String   @default("'pending'")
+  poin_didapat    BigInt   @default(8)
+  created_at      DateTime @default(now()) @db.Timestamp(6)
+  Users           Users    @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@id([report_id, user_id])
+}
