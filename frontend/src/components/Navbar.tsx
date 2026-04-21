@@ -3,16 +3,18 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 
 const navLinks = [
   { label: "Beranda", href: "/" },
   { label: "Lapor Sampah", href: "/lapor-sampah" },
   { label: "Leaderboard", href: "/leaderboard" },
-  { label: "Tukar Poin", href: "/tukar-poin", active: true },
+  { label: "Tukar Poin", href: "/tukar-poin" },
 ];
 
 const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   return (
     <nav
@@ -34,19 +36,22 @@ const Navbar: React.FC = () => {
         {/* Desktop Nav */}
         <div className="hidden items-center gap-[30px] lg:flex">
           <div className="flex items-center gap-6">
-            {navLinks.map((link) => (
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
+              return (
               <Link
                 key={link.label}
                 href={link.href}
                 className={`font-nunito text-base leading-6 no-underline transition-colors ${
-                  link.active
+                  isActive
                     ? "border-b-2 border-emerald-500 pb-[2px] font-extrabold text-emerald-500"
                     : "font-bold text-gray-500 hover:text-emerald-500"
                 }`}
               >
                 {link.label}
               </Link>
-            ))}
+              );
+            })}
           </div>
 
           <div className="flex items-center gap-4">
@@ -121,12 +126,14 @@ const Navbar: React.FC = () => {
       {mobileMenuOpen && (
         <div className="border-t border-gray-100 bg-white px-4 pb-4 lg:hidden">
           <div className="flex flex-col gap-2 pt-3">
-            {navLinks.map((link) => (
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
+              return (
               <Link
                 key={link.label}
                 href={link.href}
                 className={`font-nunito rounded-xl px-4 py-3 text-base no-underline ${
-                  link.active
+                  isActive
                     ? "bg-emerald-50 font-extrabold text-emerald-500"
                     : "font-bold text-gray-500"
                 }`}
@@ -134,7 +141,8 @@ const Navbar: React.FC = () => {
               >
                 {link.label}
               </Link>
-            ))}
+              );
+            })}
           </div>
           <div className="mt-3 flex items-center gap-3 border-t border-gray-100 pt-3">
             <div className="flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2" style={{ background: "#EAFFDD" }}>
