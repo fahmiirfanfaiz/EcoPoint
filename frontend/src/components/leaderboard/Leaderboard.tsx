@@ -1,3 +1,4 @@
+"use client";
 import { useState } from "react";
 
 type Period = "mingguan" | "sepanjang-waktu";
@@ -147,7 +148,7 @@ export default function LeaderboardKampus() {
         padding: "32px 16px",
       }}
     >
-      <div className="max-w-3xl mx-auto flex flex-col gap-6">
+      <div className="max-w-[60rem] mx-auto flex flex-col gap-6">
 
         {/* ── Header ── */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -164,7 +165,9 @@ export default function LeaderboardKampus() {
               Leaderboard Kampus
             </h1>
             <p style={{ color: "#64748b", fontSize: 14, marginTop: 4 }}>
-              Lihat siapa yang memimpin di minggu ini!
+              {period === "mingguan"
+                ? "Lihat siapa yang memimpin di minggu ini!"
+                : "Lihat siapa yang memimpin sepanjang waktu!"}
             </p>
           </div>
 

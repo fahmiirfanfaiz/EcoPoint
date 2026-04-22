@@ -49,7 +49,7 @@ interface DetectionResult {
 export default function WasteDetectionSection() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<Category>("plastik");
+  const [selectedCategory, setSelectedCategory] = useState<Category>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // dummy untuk AI
@@ -231,7 +231,7 @@ export default function WasteDetectionSection() {
                   )}
                 </div>
 
-                {/* ─── RIGHT: Kategori Panel ─── */}
+                {/* RIGHT: Kategori Panel */}
                 <div className="flex-1 p-6 flex flex-col gap-4">
                   <div>
                     <h2 className="text-lg font-extrabold text-gray-800">Konfirmasi Kategori</h2>
