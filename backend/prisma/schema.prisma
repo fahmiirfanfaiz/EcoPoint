@@ -9,11 +9,13 @@ datasource db {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model badges {
-  badges_id   String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  nama_badge  String        @unique
-  deskripsi   String
-  syarat_poin BigInt        @default(0)
-  user_badges user_badges[]
+  badges_id    String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nama_badge   String        @unique
+  deskripsi    String
+  syarat_poin  BigInt        @default(0)
+  jenis_syarat String        @default("TOTAL_POIN")
+  nilai_syarat BigInt        @default(0)
+  user_badges  user_badges[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -23,6 +25,10 @@ model notifications {
   pesan            String
   is_read          Boolean  @default(false)
   created_at       DateTime @default(now()) @db.Timestamp(6)
+  endpoint         String   @unique
+  p256dh           String
+  auth             String
+  device           String
   users            users    @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
 
   @@id([notifications_id, user_id])
@@ -81,16 +87,56 @@ model waste_reports {
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model users {
-  user_id       String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  nama          String
-  nim           String          @unique
-  password      String          @default("")
-  total_poin    BigInt          @default(0)
-  created_at    DateTime        @default(now()) @db.Timestamp(6)
-  role          String          @default("'mahasiswa'")
-  email         String          @unique
-  notifications notifications[]
-  redemptions   redemptions[]
-  user_badges   user_badges[]
-  waste_reports waste_reports[]
+  user_id               String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nama                  String
+  nim                   String                  @unique
+  password              String                  @default("")
+  total_poin            BigInt                  @default(0)
+  created_at            DateTime                @default(now()) @db.Timestamp(6)
+  role                  String                  @default("'mahasiswa'")
+  email                 String                  @unique
+  notifications         notifications[]
+  redemptions           redemptions[]
+  user_badges           user_badges[]
+  user_daily_challenges user_daily_challenges[]
+  waste_reports         waste_reports[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model challenge_of_the_day {
+  id                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  challenge_id          String                  @db.Uuid
+  tanggal               DateTime                @db.Date
+  daily_challenges      daily_challenges        @relation(fields: [challenge_id], references: [challenge_id], onDelete: Cascade, onUpdate: NoAction)
+  user_daily_challenges user_daily_challenges[]
+
+  @@unique([challenge_id, tanggal], map: "unique_challenge_date")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model daily_challenges {
+  challenge_id         String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nama_challenge       String
+  deskripsi            String
+  poin_hadiah          BigInt                 @default(0)
+  target_count         BigInt                 @default(1)
+  challenge_type       String
+  is_active            Boolean                @default(true)
+  created_at           DateTime               @default(now()) @db.Timestamp(6)
+  challenge_of_the_day challenge_of_the_day[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_daily_challenges {
+  user_daily_challenges_id String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                  String               @db.Uuid
+  challenge_of_the_day_id  String               @db.Uuid
+  current_progress         BigInt               @default(0)
+  is_completed             Boolean              @default(false)
+  is_points_claimed        Boolean              @default(false)
+  claimed_at               DateTime?            @db.Timestamp(6)
+  challenge_of_the_day     challenge_of_the_day @relation(fields: [challenge_of_the_day_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_daily_challenges_challenge_fkey")
+  users                    users                @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, challenge_of_the_day_id], map: "unique_user_daily_challenge")
 }
