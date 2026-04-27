@@ -88,7 +88,8 @@ const Navbar: React.FC = () => {
             </button>
 
             {/* Profile Avatar */}
-            <div
+            <Link
+              href="/profile"
               className="flex h-10 w-10 items-center justify-center rounded-full p-[2px]"
               style={{
                 background: "linear-gradient(45deg, #34D399, #14B8A6)",
@@ -104,7 +105,7 @@ const Navbar: React.FC = () => {
                   />
                 </svg>
               </div>
-            </div>
+            </Link>
           </div>
         </div>
 
