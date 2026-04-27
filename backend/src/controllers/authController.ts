@@ -1,16 +1,8 @@
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import dotenv from "dotenv";
-import { PrismaClient } from "../../generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
-dotenv.config();
-
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL!,
-});
-
-export const prisma = new PrismaClient({ adapter });
+import { prisma } from "../lib/prisma.js";
+import { AuthRequest } from "../middleware/auth.js";
 
 const SALT_ROUNDS = 10;
 
@@ -18,7 +10,6 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   try {
     const { nama, nim, email, password, role } = req.body;
 
-    // Validasi input
     if (!nama || !nim || !email || !password) {
       res
         .status(400)
@@ -26,7 +17,6 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Cek apakah email sudah terdaftar
     const existingEmail = await prisma.users.findUnique({
       where: { email },
     });
@@ -36,7 +26,6 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Cek apakah NIM sudah terdaftar
     const existingNim = await prisma.users.findUnique({
       where: { nim },
     });
@@ -46,10 +35,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
-    // Simpan user baru ke database
     const newUser = await prisma.users.create({
       data: {
         nama,
@@ -82,13 +69,11 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
 
-    // Validasi input
     if (!email || !password) {
       res.status(400).json({ message: "Email dan password wajib diisi" });
       return;
     }
 
-    // Cari user berdasarkan email
     const user = await prisma.users.findUnique({
       where: { email },
     });
@@ -98,7 +83,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Verifikasi password
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
@@ -106,7 +90,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Generate JWT token
     const token = jwt.sign(
       {
         userId: user.user_id,
@@ -114,7 +97,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         role: user.role,
       },
       process.env.JWT_SECRET as string,
-      { expiresIn: "7d" },
+      { expiresIn: "7d" }
     );
 
     res.status(200).json({
@@ -126,7 +109,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         nim: user.nim,
         email: user.email,
         role: user.role,
-        total_poin: user.total_poin.toString(),
+        total_poin: Number(user.total_poin),
       },
     });
   } catch (error) {
@@ -135,4 +118,39 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-export default { register, login };
+export const getMe = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const user = await prisma.users.findUnique({
+      where: { user_id: req.userId },
+      select: {
+        user_id: true,
+        nama: true,
+        nim: true,
+        email: true,
+        role: true,
+        total_poin: true,
+        created_at: true,
+      },
+    });
+
+    if (!user) {
+      res.status(404).json({ message: "User tidak ditemukan" });
+      return;
+    }
+
+    res.status(200).json({
+      user: {
+        ...user,
+        total_poin: Number(user.total_poin),
+      },
+    });
+  } catch (error) {
+    console.error("GetMe error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export default { register, login, getMe };
