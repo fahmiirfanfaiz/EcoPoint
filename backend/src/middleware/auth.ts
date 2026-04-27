@@ -41,3 +41,20 @@ export const authMiddleware = (
     res.status(401).json({ message: "Token tidak valid atau sudah expired" });
   }
 };
+
+/**
+ * Admin-only middleware. Must be used AFTER authMiddleware.
+ * Checks if the authenticated user has the "admin" role.
+ */
+export const adminMiddleware = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): void => {
+  const role = req.userRole?.replace(/'/g, "") ?? "";
+  if (role !== "admin") {
+    res.status(403).json({ message: "Akses ditolak. Hanya admin yang diizinkan." });
+    return;
+  }
+  next();
+};

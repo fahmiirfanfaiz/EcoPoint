@@ -6,6 +6,8 @@ import authRoutes from "./routes/authRoute.js";
 import dashboardRoutes from "./routes/dashboardRoute.js";
 import leaderboardRoutes from "./routes/leaderboardRoute.js";
 import rewardsRoutes from "./routes/rewardsRoute.js";
+import badgeRoutes from "./routes/badgeRoute.js";
+import dailyChallengeRoutes from "./routes/dailyChallengeRoute.js";
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -25,6 +27,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/rewards", rewardsRoutes);
+app.use("/api/badges", badgeRoutes);
+app.use("/api/daily-challenges", dailyChallengeRoutes);
 
 // ── Health check ───────────────────────────────────────────
 app.get("/api/health", (_req, res) => {
@@ -56,5 +60,14 @@ app.listen(port, () => {
   console.log(`   - GET    /api/rewards`);
   console.log(`   - POST   /api/rewards/redeem`);
   console.log(`   - GET    /api/rewards/history`);
+  console.log(`   - GET    /api/badges`);
+  console.log(`   - POST   /api/badges`);
+  console.log(`   - GET    /api/daily-challenges/today`);
+  console.log(`   - POST   /api/daily-challenges/progress`);
+  console.log(`   - POST   /api/daily-challenges/claim`);
+  console.log(`   - GET    /api/daily-challenges/admin/all`);
+  console.log(`   - POST   /api/daily-challenges/admin`);
+  console.log(`   - PUT    /api/daily-challenges/admin/:id`);
+  console.log(`   - DELETE /api/daily-challenges/admin/:id`);
   console.log(`   - GET    /api/health`);
 });
