@@ -24,7 +24,7 @@ const Navbar: React.FC = () => {
         backdropFilter: "blur(6px)",
       }}
     >
-      <div className="mx-auto flex w-full max-w-[1152px] items-center justify-between px-4 py-4">
+      <div className="mx-auto flex w-full max-w-[1280px] items-center justify-between px-6 py-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3 no-underline">
           <Image src="/Logo/Logo.svg" alt="EcoPoint Logo" width={32} height={32} />
@@ -37,19 +37,19 @@ const Navbar: React.FC = () => {
         <div className="hidden items-center gap-[30px] lg:flex">
           <div className="flex items-center gap-6">
             {navLinks.map((link) => {
-              const isActive = pathname === link.href;
+              const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
               return (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  className={`font-nunito text-base leading-6 no-underline transition-colors ${
-                    isActive
-                      ? "border-b-2 border-emerald-500 pb-[2px] font-extrabold text-emerald-500"
-                      : "font-bold text-gray-500 hover:text-emerald-500"
-                  }`}
-                >
-                  {link.label}
-                </Link>
+              <Link
+                key={link.label}
+                href={link.href}
+                className={`font-nunito text-base leading-6 no-underline transition-colors ${
+                  isActive
+                    ? "border-b-2 border-emerald-500 pb-[2px] font-extrabold text-emerald-500"
+                    : "font-bold text-gray-500 hover:text-emerald-500"
+                }`}
+              >
+                {link.label}
+              </Link>
               );
             })}
           </div>
@@ -128,20 +128,20 @@ const Navbar: React.FC = () => {
         <div className="border-t border-gray-100 bg-white px-4 pb-4 lg:hidden">
           <div className="flex flex-col gap-2 pt-3">
             {navLinks.map((link) => {
-              const isActive = pathname === link.href;
+              const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
               return (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  className={`font-nunito rounded-xl px-4 py-3 text-base no-underline ${
-                    isActive
-                      ? "bg-emerald-50 font-extrabold text-emerald-500"
-                      : "font-bold text-gray-500"
-                  }`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {link.label}
-                </Link>
+              <Link
+                key={link.label}
+                href={link.href}
+                className={`font-nunito rounded-xl px-4 py-3 text-base no-underline ${
+                  isActive
+                    ? "bg-emerald-50 font-extrabold text-emerald-500"
+                    : "font-bold text-gray-500"
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {link.label}
+              </Link>
               );
             })}
           </div>
