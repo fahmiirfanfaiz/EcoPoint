@@ -1,14 +1,20 @@
+"use client";
+
+import { useState } from "react";
 import ProfileCard from "@/components/dashboard/ProfileCard";
 import StatsCards from "@/components/dashboard/StatsCards";
 import WeeklyActivity from "@/components/dashboard/WeeklyActivity";
 import RecentAchievements from "@/components/dashboard/RecentAchievements";
 import RecentUpdates from "@/components/dashboard/RecentUpdates";
+import DailyChallenges from "@/components/dashboard/DailyChallenges";
 
 export default function DashboardPage() {
+  const [showChallenges, setShowChallenges] = useState(false);
+
   return (
     <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-6 px-6 py-8">
       {/* Profile Card */}
-      <ProfileCard />
+      <ProfileCard onOpenChallenges={() => setShowChallenges(true)} />
 
       {/* Stats Cards - full width */}
       <StatsCards />
@@ -25,6 +31,12 @@ export default function DashboardPage() {
           <RecentUpdates />
         </div>
       </div>
+
+      {/* Daily Challenges Modal */}
+      <DailyChallenges
+        isOpen={showChallenges}
+        onClose={() => setShowChallenges(false)}
+      />
     </div>
   );
 }

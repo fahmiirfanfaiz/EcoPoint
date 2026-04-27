@@ -4,10 +4,7 @@ interface RewardsStoreBannerProps {
 
 export default function RewardsStoreBanner({ balance = 1250 }: RewardsStoreBannerProps) {
   return (
-    <div
-      className="max-w-[60rem] mx-auto w-full"
-      style={{ fontFamily: "'Nunito', 'Segoe UI', sans-serif" }}
-    >
+    <div className="font-nunito w-full">
       <div
         className="relative flex items-center justify-between gap-4 rounded-2xl px-8 py-7 overflow-hidden"
         style={{

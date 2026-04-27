@@ -396,10 +396,7 @@ export default function RewardsGrid() {
     .join(" ");
 
   return (
-    <div
-      className="max-w-[60rem] mx-auto w-full"
-      style={{ fontFamily: "'Nunito', 'Segoe UI', sans-serif" }}
-    >
+    <div className="font-nunito w-full">
       {/* ── User points indicator ── */}
       <div style={{
         display: "inline-flex", alignItems: "center", gap: 6,

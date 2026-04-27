@@ -14,7 +14,7 @@ const WeeklyActivity: React.FC = () => {
   const maxH = 200;
   return (
     <div
-      className="rounded-[32px] bg-white p-6 w-[90%] mx-auto"
+      className="rounded-[32px] bg-white p-6"
       style={{
         outline: "1px #ECFDF5 solid",
         outlineOffset: "-1px",

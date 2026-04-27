@@ -3,9 +3,9 @@ import RewardGrid from "@/components/redeem/RewardGrid";
 
 export default function TukarPoinPage() {
   return (
-    <main className="flex flex-col gap-6 px-4 py-6">
+    <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-6 px-6 py-8">
       <RewardBanner />
       <RewardGrid />
-    </main>
+    </div>
   );
 }

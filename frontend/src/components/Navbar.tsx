@@ -24,7 +24,7 @@ const Navbar: React.FC = () => {
         backdropFilter: "blur(6px)",
       }}
     >
-      <div className="mx-auto flex w-full max-w-[1152px] items-center justify-between px-4 py-4">
+      <div className="mx-auto flex w-full max-w-[1280px] items-center justify-between px-6 py-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3 no-underline">
           <Image src="/Logo/Logo.svg" alt="EcoPoint Logo" width={32} height={32} />

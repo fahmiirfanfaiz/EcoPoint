@@ -139,16 +139,7 @@ export default function LeaderboardKampus() {
   const podiumOrder: (1 | 2 | 3)[] = [2, 1, 3];
 
   return (
-    <div
-      className="w-full"
-      style={{
-        fontFamily: "'Nunito', 'Segoe UI', sans-serif",
-        background: "#f0fdf4",
-        minHeight: "100vh",
-        padding: "32px 16px",
-      }}
-    >
-      <div className="max-w-[60rem] mx-auto flex flex-col gap-6">
+    <div className="font-nunito flex w-full flex-col gap-6">
 
         {/* ── Header ── */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -443,7 +434,6 @@ export default function LeaderboardKampus() {
           </div>
         </div>
 
-      </div>
     </div>
   );
 }
