@@ -3,7 +3,7 @@ import React from "react";
 const ProfileCard: React.FC = () => {
   return (
     <div
-      className="relative overflow-hidden rounded-[32px] bg-white p-8"
+      className="relative overflow-hidden rounded-[32px] bg-white p-8 w-[90%] mx-auto"
       style={{
         boxShadow: "0px 2px 4px -1px rgba(0,0,0,0.03), 0px 4px 6px -1px rgba(0,0,0,0.05)",
       }}

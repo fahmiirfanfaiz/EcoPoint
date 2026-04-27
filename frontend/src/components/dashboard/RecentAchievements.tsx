@@ -9,7 +9,7 @@ const achievements = [
 
 const RecentAchievements: React.FC = () => (
   <div
-    className="rounded-[32px] bg-white p-6"
+    className="rounded-[32px] bg-white p-6 w-[90%] mx-auto"
     style={{
       outline: "1px #ECFDF5 solid",
       outlineOffset: "-1px",
