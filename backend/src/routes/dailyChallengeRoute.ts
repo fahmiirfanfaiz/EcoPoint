@@ -18,6 +18,12 @@ router.post("/claim", authMiddleware, dailyChallengeController.claimPoints);
 // List ALL challenges (including inactive)
 router.get("/admin/all", authMiddleware, adminMiddleware, dailyChallengeController.getAllChallenges);
 
+// View today's assigned challenges
+router.get("/admin/today", authMiddleware, adminMiddleware, dailyChallengeController.getTodayAdmin);
+
+// Reset today's challenges (only if no user has progress)
+router.delete("/admin/reset-today", authMiddleware, adminMiddleware, dailyChallengeController.resetTodayChallenges);
+
 // Create a new challenge template
 router.post("/admin", authMiddleware, adminMiddleware, dailyChallengeController.createChallenge);
 
