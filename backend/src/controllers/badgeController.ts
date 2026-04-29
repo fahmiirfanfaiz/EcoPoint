@@ -12,7 +12,7 @@ export const getBadges = async (req: Request, res: Response) => {
     });
     
     // Convert BigInts
-    const formattedBadges = badges.map(b => ({
+    const formattedBadges = badges.map((b: typeof badges[number]) => ({
       ...b,
       syarat_poin: Number(b.syarat_poin),
       nilai_syarat: Number(b.nilai_syarat),

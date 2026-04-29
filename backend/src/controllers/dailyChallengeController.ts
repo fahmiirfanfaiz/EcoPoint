@@ -23,7 +23,7 @@ export const getAllChallenges = async (
     });
 
     res.status(200).json({
-      challenges: challenges.map((c) => ({
+      challenges: challenges.map((c: (typeof challenges)[number]) => ({
         ...c,
         poin_hadiah: Number(c.poin_hadiah),
         target_count: Number(c.target_count),
@@ -473,7 +473,7 @@ export const claimPoints = async (
       return;
     }
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       const userChallenge = await tx.user_daily_challenges.findUnique({
         where: {
           user_id_challenge_of_the_day_id: {

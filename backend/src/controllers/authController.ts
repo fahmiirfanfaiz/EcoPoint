@@ -11,9 +11,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const { nama, nim, email, password, role } = req.body;
 
     if (!nama || !nim || !email || !password) {
-      res
-        .status(400)
-        .json({ message: "Nama, NIM, email, dan password wajib diisi" });
+      res.status(400).json({ message: "Nama, NIM, email, dan password wajib diisi" });
       return;
     }
 
