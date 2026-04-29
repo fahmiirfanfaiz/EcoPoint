@@ -1,4 +1,5 @@
 import React from "react";
+import { Award } from "lucide-react";
 
 const achievements = [
   { emoji: "🌿", title: "Eco Starter", desc: "First recycle", locked: false },
@@ -18,10 +19,12 @@ const RecentAchievements: React.FC = () => (
   >
     <div className="mb-6 flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <svg width="16" height="21" viewBox="0 0 16 21" fill="none">
-          <path d="M8 0L9.79 3.58L13.71 4.15L10.85 6.94L11.59 10.87L8 9.01L4.41 10.87L5.15 6.94L2.29 4.15L6.21 3.58L8 0Z" fill="#F59E0B" />
-          <path d="M4 12v8l4-2 4 2v-8" fill="#F59E0B" opacity="0.6" />
-        </svg>
+        <div className="text-amber-500">
+          <svg width="16" height="21" viewBox="0 0 16 21" fill="none">
+            <path d="M8 0L9.79 3.58L13.71 4.15L10.85 6.94L11.59 10.87L8 9.01L4.41 10.87L5.15 6.94L2.29 4.15L6.21 3.58L8 0Z" fill="currentColor" />
+            <path d="M4 12v8l4-2 4 2v-8" fill="currentColor" opacity="0.6"/>
+          </svg>
+        </div>
         <span className="font-quicksand text-lg font-bold leading-7 text-gray-800">Recent Achievements</span>
       </div>
       <button className="font-quicksand text-sm font-bold leading-5 text-emerald-500 hover:text-emerald-600">View All</button>

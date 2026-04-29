@@ -82,7 +82,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
         });
 
         saveAuth({ token: response.token, user: response.user });
-        router.push("/profile");
+        router.push("/dashboard");
         return;
       }
 

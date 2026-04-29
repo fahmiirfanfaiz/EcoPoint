@@ -397,20 +397,6 @@ export default function RewardsGrid() {
 
   return (
     <div className="font-nunito w-full">
-      {/* ── User points indicator ── */}
-      <div style={{
-        display: "inline-flex", alignItems: "center", gap: 6,
-        background: "#f0fdf4", border: "1.5px solid #86efac",
-        borderRadius: 999, padding: "6px 14px", marginBottom: 20,
-      }}>
-        <svg viewBox="0 0 10 13" fill="none" style={{ width: 9, height: 11 }}>
-          <path d="M6 1L1 7.5h4.5L3 12 10 5H5.5L8 1H6z" fill="#16a34a" />
-        </svg>
-        <span style={{ fontSize: 12, fontWeight: 800, color: "#15803d" }}>
-          Your Balance: {userPoints.toLocaleString("id-ID")} pts
-        </span>
-      </div>
-
       {/* ── Filter bar ── */}
       <div style={{
         display: "flex", alignItems: "center",
