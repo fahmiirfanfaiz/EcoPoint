@@ -3,7 +3,9 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { clearStoredAuth, getStoredAuth } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
 
 const navLinks = [
   { label: "Beranda", href: "/" },
@@ -14,7 +16,112 @@ const navLinks = [
 
 const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userName, setUserName] = useState<string | null>(null);
   const pathname = usePathname();
+  const router = useRouter();
+
+  React.useEffect(() => {
+    const syncAuthState = () => {
+      const auth = getStoredAuth();
+      setIsAuthenticated(Boolean(auth));
+      setUserName(auth?.user?.nama || null);
+    };
+
+    syncAuthState();
+    window.addEventListener("ecopoint-auth-changed", syncAuthState);
+
+    return () => {
+      window.removeEventListener("ecopoint-auth-changed", syncAuthState);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    clearStoredAuth();
+    setIsAuthenticated(false);
+    setUserName(null);
+    router.push("/login");
+  };
+
+  const guestActions = (
+    <div className="flex items-center gap-3">
+      <Link href="/login">
+        <Button variant="outline" size="sm">
+          Masuk
+        </Button>
+      </Link>
+      <Link href="/register">
+        <Button size="sm">Daftar</Button>
+      </Link>
+    </div>
+  );
+
+  const authenticatedActions = (
+    <>
+      {/* Points Badge */}
+      <div
+        className="flex items-center gap-2 rounded-full px-4 py-2"
+        style={{
+          background: "#EAFFDD",
+          outline: "1.64px #E7E8E9 solid",
+          outlineOffset: "-1.64px",
+        }}
+      >
+        <span className="text-base leading-none">🪙</span>
+        <span className="font-outfit text-sm font-bold leading-5 text-emerald-800">
+          1,240 PTS
+        </span>
+      </div>
+
+      {/* Notification Bell */}
+      <button
+        className="relative flex h-10 w-10 items-center justify-center rounded-full bg-slate-100"
+        style={{
+          outline: "1.64px #E7E8E9 solid",
+          outlineOffset: "-1.64px",
+        }}
+      >
+        <svg width="16" height="20" viewBox="0 0 16 20" fill="none">
+          <path
+            d="M8 20c1.1 0 2-.9 2-2H6c0 1.1.9 2 2 2zm6-6V9c0-3.07-1.63-5.64-4.5-6.32V2C9.5 1.17 8.83.5 8 .5S6.5 1.17 6.5 2v.68C3.64 3.36 2 5.92 2 9v5l-2 2v1h16v-1l-2-2z"
+            fill="#475569"
+          />
+        </svg>
+        <div className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-white bg-red-500" />
+      </button>
+
+      {/* Profile Greeting */}
+      <Link
+        href="/profile"
+        className="flex items-center gap-3 rounded-full px-3 py-1 hover:bg-gray-50"
+      >
+        <div
+          className="flex h-10 w-10 items-center justify-center rounded-full p-[2px]"
+          style={{
+            background: "linear-gradient(45deg, #34D399, #14B8A6)",
+            boxShadow:
+              "0px 2px 4px -2px rgba(0,0,0,0.10), 0px 4px 6px -1px rgba(0,0,0,0.10)",
+          }}
+        >
+          <div className="flex h-full w-full items-center justify-center rounded-full bg-white">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path
+                d="M8 8c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                fill="#94A3B8"
+              />
+            </svg>
+          </div>
+        </div>
+        <span className="hidden text-sm font-semibold text-gray-700 lg:inline">
+          Hi, {userName || "User"}
+        </span>
+      </Link>
+
+      <Button onClick={handleLogout} variant="outline" size="sm">
+        Keluar
+      </Button>
+    </>
+  );
 
   return (
     <nav
@@ -27,7 +134,12 @@ const Navbar: React.FC = () => {
       <div className="mx-auto flex w-full max-w-[1280px] items-center justify-between px-6 py-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3 no-underline">
-          <Image src="/Logo/Logo.svg" alt="EcoPoint Logo" width={32} height={32} />
+          <Image
+            src="/Logo/Logo.svg"
+            alt="EcoPoint Logo"
+            width={32}
+            height={32}
+          />
           <span className="font-nunito text-2xl font-extrabold leading-8 text-gray-800">
             EcoPoint Campus
           </span>
@@ -37,75 +149,27 @@ const Navbar: React.FC = () => {
         <div className="hidden items-center gap-[30px] lg:flex">
           <div className="flex items-center gap-6">
             {navLinks.map((link) => {
-              const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
+              const isActive =
+                pathname === link.href ||
+                (link.href !== "/" && pathname.startsWith(link.href));
               return (
-              <Link
-                key={link.label}
-                href={link.href}
-                className={`font-nunito text-base leading-6 no-underline transition-colors ${
-                  isActive
-                    ? "border-b-2 border-emerald-500 pb-[2px] font-extrabold text-emerald-500"
-                    : "font-bold text-gray-500 hover:text-emerald-500"
-                }`}
-              >
-                {link.label}
-              </Link>
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  className={`font-nunito text-base leading-6 no-underline transition-colors ${
+                    isActive
+                      ? "border-b-2 border-emerald-500 pb-[2px] font-extrabold text-emerald-500"
+                      : "font-bold text-gray-500 hover:text-emerald-500"
+                  }`}
+                >
+                  {link.label}
+                </Link>
               );
             })}
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Points Badge */}
-            <div
-              className="flex items-center gap-2 rounded-full px-4 py-2"
-              style={{
-                background: "#EAFFDD",
-                outline: "1.64px #E7E8E9 solid",
-                outlineOffset: "-1.64px",
-              }}
-            >
-              <span className="text-base leading-none">🪙</span>
-              <span className="font-outfit text-sm font-bold leading-5 text-emerald-800">
-                1,240 PTS
-              </span>
-            </div>
-
-            {/* Notification Bell */}
-            <button
-              className="relative flex h-10 w-10 items-center justify-center rounded-full bg-slate-100"
-              style={{
-                outline: "1.64px #E7E8E9 solid",
-                outlineOffset: "-1.64px",
-              }}
-            >
-              <svg width="16" height="20" viewBox="0 0 16 20" fill="none">
-                <path
-                  d="M8 20c1.1 0 2-.9 2-2H6c0 1.1.9 2 2 2zm6-6V9c0-3.07-1.63-5.64-4.5-6.32V2C9.5 1.17 8.83.5 8 .5S6.5 1.17 6.5 2v.68C3.64 3.36 2 5.92 2 9v5l-2 2v1h16v-1l-2-2z"
-                  fill="#475569"
-                />
-              </svg>
-              <div className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-white bg-red-500" />
-            </button>
-
-            {/* Profile Avatar */}
-            <Link
-              href="/profile"
-              className="flex h-10 w-10 items-center justify-center rounded-full p-[2px]"
-              style={{
-                background: "linear-gradient(45deg, #34D399, #14B8A6)",
-                boxShadow:
-                  "0px 2px 4px -2px rgba(0,0,0,0.10), 0px 4px 6px -1px rgba(0,0,0,0.10)",
-              }}
-            >
-              <div className="flex h-full w-full items-center justify-center rounded-full bg-white">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path
-                    d="M8 8c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
-                    fill="#94A3B8"
-                  />
-                </svg>
-              </div>
-            </Link>
+            {isAuthenticated ? authenticatedActions : guestActions}
           </div>
         </div>
 
@@ -116,9 +180,19 @@ const Navbar: React.FC = () => {
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
             {mobileMenuOpen ? (
-              <path d="M6 18L18 6M6 6l12 12" stroke="#1F2937" strokeWidth="2" strokeLinecap="round" />
+              <path
+                d="M6 18L18 6M6 6l12 12"
+                stroke="#1F2937"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
             ) : (
-              <path d="M3 12h18M3 6h18M3 18h18" stroke="#1F2937" strokeWidth="2" strokeLinecap="round" />
+              <path
+                d="M3 12h18M3 6h18M3 18h18"
+                stroke="#1F2937"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
             )}
           </svg>
         </button>
@@ -128,28 +202,66 @@ const Navbar: React.FC = () => {
         <div className="border-t border-gray-100 bg-white px-4 pb-4 lg:hidden">
           <div className="flex flex-col gap-2 pt-3">
             {navLinks.map((link) => {
-              const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
+              const isActive =
+                pathname === link.href ||
+                (link.href !== "/" && pathname.startsWith(link.href));
               return (
-              <Link
-                key={link.label}
-                href={link.href}
-                className={`font-nunito rounded-xl px-4 py-3 text-base no-underline ${
-                  isActive
-                    ? "bg-emerald-50 font-extrabold text-emerald-500"
-                    : "font-bold text-gray-500"
-                }`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {link.label}
-              </Link>
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  className={`font-nunito rounded-xl px-4 py-3 text-base no-underline ${
+                    isActive
+                      ? "bg-emerald-50 font-extrabold text-emerald-500"
+                      : "font-bold text-gray-500"
+                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {link.label}
+                </Link>
               );
             })}
           </div>
-          <div className="mt-3 flex items-center gap-3 border-t border-gray-100 pt-3">
-            <div className="flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2" style={{ background: "#EAFFDD" }}>
-              <span>🪙</span>
-              <span className="font-outfit text-sm font-bold text-emerald-800">1,240 PTS</span>
-            </div>
+          <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-gray-100 pt-3">
+            {isAuthenticated ? (
+              <>
+                <div
+                  className="flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2"
+                  style={{ background: "#EAFFDD" }}
+                >
+                  <span>🪙</span>
+                  <span className="font-outfit text-sm font-bold text-emerald-800">
+                    1,240 PTS
+                  </span>
+                </div>
+                <span className="flex-1 text-sm font-semibold text-gray-700">
+                  Hi, {userName || "User"}
+                </span>
+                <Button onClick={handleLogout} variant="outline" size="sm">
+                  Keluar
+                </Button>
+              </>
+            ) : (
+              <div className="flex w-full flex-col gap-3">
+                <Link
+                  href="/login"
+                  className="w-full"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Button variant="outline" size="sm" className="w-full">
+                    Masuk
+                  </Button>
+                </Link>
+                <Link
+                  href="/register"
+                  className="w-full"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Button size="sm" className="w-full">
+                    Daftar
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       )}
