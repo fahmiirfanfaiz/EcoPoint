@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 const navLinks = [
   { label: "Beranda", href: "/" },
@@ -15,6 +16,7 @@ const navLinks = [
 const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { user, loginAsAdmin, logout, isLoading } = useAuth();
 
   return (
     <nav
@@ -88,24 +90,50 @@ const Navbar: React.FC = () => {
             </button>
 
             {/* Profile Avatar */}
-            <Link
-              href="/profile"
-              className="flex h-10 w-10 items-center justify-center rounded-full p-[2px]"
-              style={{
-                background: "linear-gradient(45deg, #34D399, #14B8A6)",
-                boxShadow:
-                  "0px 2px 4px -2px rgba(0,0,0,0.10), 0px 4px 6px -1px rgba(0,0,0,0.10)",
-              }}
-            >
-              <div className="flex h-full w-full items-center justify-center rounded-full bg-white">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path
-                    d="M8 8c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
-                    fill="#94A3B8"
-                  />
-                </svg>
+            {user ? (
+              <div className="flex items-center gap-3">
+                {user.role === "admin" && (
+                  <Link
+                    href="/admin"
+                    className="font-nunito rounded-full bg-emerald-500 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-600 transition-colors"
+                  >
+                    Admin Panel
+                  </Link>
+                )}
+                <button
+                  onClick={logout}
+                  className="font-nunito rounded-full border border-gray-200 px-4 py-2 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  Logout
+                </button>
+                <Link
+                  href="/profile"
+                  className="flex h-10 w-10 items-center justify-center rounded-full p-[2px]"
+                  style={{
+                    background: "linear-gradient(45deg, #34D399, #14B8A6)",
+                    boxShadow:
+                      "0px 2px 4px -2px rgba(0,0,0,0.10), 0px 4px 6px -1px rgba(0,0,0,0.10)",
+                  }}
+                >
+                  <div className="flex h-full w-full items-center justify-center rounded-full bg-white">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path
+                        d="M8 8c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                        fill="#94A3B8"
+                      />
+                    </svg>
+                  </div>
+                </Link>
               </div>
-            </Link>
+            ) : (
+              <button
+                onClick={loginAsAdmin}
+                disabled={isLoading}
+                className="font-nunito rounded-full bg-slate-800 px-5 py-2 text-sm font-bold text-white hover:bg-slate-700 transition-colors disabled:opacity-50"
+              >
+                {isLoading ? "Loading..." : "Login Admin"}
+              </button>
+            )}
           </div>
         </div>
 

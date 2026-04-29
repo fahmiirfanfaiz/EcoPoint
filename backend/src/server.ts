@@ -66,6 +66,7 @@ app.listen(port, () => {
   console.log(`   - POST   /api/daily-challenges/progress`);
   console.log(`   - POST   /api/daily-challenges/claim`);
   console.log(`   - GET    /api/daily-challenges/admin/all`);
+  console.log(`   - GET    /api/daily-challenges/admin/today`);
   console.log(`   - POST   /api/daily-challenges/admin`);
   console.log(`   - PUT    /api/daily-challenges/admin/:id`);
   console.log(`   - DELETE /api/daily-challenges/admin/:id`);
