@@ -4,13 +4,14 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Target, Gift, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, Target, Gift, Award, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
 
 const navItems = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { label: "Users", href: "/admin/users", icon: Users },
   { label: "Challenges", href: "/admin/challenges", icon: Target },
+  { label: "Badges", href: "/admin/badges", icon: Award },
   { label: "Rewards", href: "/admin/rewards", icon: Gift },
 ];
 
