@@ -61,7 +61,10 @@ app.listen(port, () => {
   console.log(`   - POST   /api/rewards/redeem`);
   console.log(`   - GET    /api/rewards/history`);
   console.log(`   - GET    /api/badges`);
-  console.log(`   - POST   /api/badges`);
+  console.log(`   - GET    /api/badges/admin/all`);
+  console.log(`   - POST   /api/badges/admin`);
+  console.log(`   - PUT    /api/badges/admin/:id`);
+  console.log(`   - DELETE /api/badges/admin/:id`);
   console.log(`   - GET    /api/daily-challenges/today`);
   console.log(`   - POST   /api/daily-challenges/progress`);
   console.log(`   - POST   /api/daily-challenges/claim`);

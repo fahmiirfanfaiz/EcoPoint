@@ -80,3 +80,11 @@ export function clearStoredAuth() {
   window.localStorage.removeItem(AUTH_STORAGE_KEY);
   window.dispatchEvent(new Event("ecopoint-auth-changed"));
 }
+
+export function updateStoredPoints(newPoints: number) {
+  const auth = getStoredAuth();
+  if (auth) {
+    auth.user.total_poin = newPoints;
+    saveAuth(auth);
+  }
+}

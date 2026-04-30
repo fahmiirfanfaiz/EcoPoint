@@ -2,13 +2,31 @@
 
 import React from "react";
 import Link from "next/link";
-import { Plus, Gift, Star } from "lucide-react";
+import { Plus, Zap, Star } from "lucide-react";
+import { getStoredAuth } from "@/lib/auth";
 
 interface ProfileCardProps {
   onOpenChallenges?: () => void;
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({ onOpenChallenges }) => {
+  const [userName, setUserName] = React.useState("User");
+  const [userNim, setUserNim] = React.useState("");
+
+  const syncData = React.useCallback(() => {
+    const auth = getStoredAuth();
+    if (auth) {
+      setUserName(auth.user.nama);
+      setUserNim(auth.user.nim);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    syncData();
+    window.addEventListener("ecopoint-auth-changed", syncData);
+    return () => window.removeEventListener("ecopoint-auth-changed", syncData);
+  }, [syncData]);
+
   return (
     <div
       className="relative overflow-hidden rounded-[32px] bg-white p-8"
@@ -31,7 +49,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onOpenChallenges }) => {
               outlineOffset: "-4px",
             }}
           >
-            <img src="https://api.dicebear.com/9.x/adventurer/svg?seed=Emery" alt="Avatar" className="h-full w-full object-cover" />
+            <img src={`https://api.dicebear.com/9.x/adventurer/svg?seed=${userName}`} alt="Avatar" className="h-full w-full object-cover" />
           </div>
           <div
             className="absolute bottom-0 left-1/2 flex -translate-x-2 -translate-y-1 items-center gap-1 rounded-full bg-amber-500 px-3 py-1.5"
@@ -45,11 +63,11 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onOpenChallenges }) => {
         {/* Info */}
         <div className="flex flex-1 flex-col gap-2 text-center md:text-left">
           <h1 className="font-quicksand text-[30px] font-bold leading-9 text-gray-800">
-            Hello, Alex! 👋
+            Hello, {userName.split(" ")[0]}! 👋
           </h1>
           <div className="flex flex-wrap justify-center gap-4 pb-4 md:justify-start">
             <span className="font-outfit rounded-lg bg-emerald-50 px-3 py-1 text-sm leading-5 text-gray-600" style={{ outline: "1px #D1FAE5 solid", outlineOffset: "-1px" }}>
-              NIM: 23/514737/TK/56513
+              NIM: {userNim || "N/A"}
             </span>
             <span className="font-outfit rounded-lg bg-emerald-50 px-3 py-1 text-sm leading-5 text-gray-600" style={{ outline: "1px #D1FAE5 solid", outlineOffset: "-1px" }}>
               Program Studi: Teknologi Informasi
@@ -71,14 +89,14 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onOpenChallenges }) => {
             <Plus size={20} />
             <span className="font-outfit text-base font-semibold leading-6">Lapor Sampah</span>
           </Link>
-          <Link
-            href="/tukar-poin"
+          <button
+            onClick={onOpenChallenges}
             className="flex items-center justify-center gap-2 rounded-3xl bg-white px-6 py-3 transition hover:bg-emerald-50"
             style={{ outline: "2px #D1FAE5 solid", outlineOffset: "-2px" }}
           >
-            <Gift size={20} className="text-emerald-700" />
-            <span className="font-outfit text-base leading-6 text-emerald-700">Tukar Poin</span>
-          </Link>
+            <Zap size={20} className="text-emerald-700" />
+            <span className="font-outfit text-base leading-6 text-emerald-700">Daily Challenges</span>
+          </button>
         </div>
       </div>
     </div>

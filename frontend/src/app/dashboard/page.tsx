@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getStoredAuth } from "@/lib/auth";
+import { getStoredAuth, updateStoredPoints } from "@/lib/auth";
 import DailyChallenges from "@/components/dashboard/DailyChallenges";
 import {
   Zap, ChevronRight, Plus, Trophy, Recycle, Loader2,
@@ -58,6 +58,28 @@ export default function BerandaPage() {
   const [weeklyActivity, setWeeklyActivity] = useState<WeeklyDay[]>([]);
   const [loading, setLoading] = useState(true);
   const [showChallengesModal, setShowChallengesModal] = useState(false);
+  const [claimingId, setClaimingId] = useState<string | null>(null);
+
+  const handleClaim = async (challengeOfTheDayId: string) => {
+    const auth = getStoredAuth();
+    if (!auth?.token) return;
+    setClaimingId(challengeOfTheDayId);
+    try {
+      const res = await fetch(`${API}/daily-challenges/claim`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${auth.token}` },
+        body: JSON.stringify({ challenge_of_the_day_id: challengeOfTheDayId }),
+      });
+      if (res.ok) {
+        const result = await res.json();
+        updateStoredPoints(result.data.total_poin);
+      }
+    } catch (e) {
+      console.error("Claim error:", e);
+    } finally {
+      setClaimingId(null);
+    }
+  };
 
   const fetchAll = useCallback(async () => {
     const auth = getStoredAuth();
@@ -78,7 +100,11 @@ export default function BerandaPage() {
     finally { setLoading(false); }
   }, [router]);
 
-  useEffect(() => { fetchAll(); }, [fetchAll]);
+  useEffect(() => { 
+    fetchAll(); 
+    window.addEventListener("ecopoint-auth-changed", fetchAll);
+    return () => window.removeEventListener("ecopoint-auth-changed", fetchAll);
+  }, [fetchAll]);
 
   const completedCount = challenges.filter((c) => c.user_progress?.is_completed).length;
   const totalChalPoin = challenges.reduce((s, c) => s + c.poin_hadiah, 0);
@@ -194,25 +220,45 @@ export default function BerandaPage() {
                   const progress = c.user_progress?.current_progress ?? 0;
                   const pct = c.target_count > 0 ? Math.min((progress / c.target_count) * 100, 100) : 0;
                   const done = c.user_progress?.is_completed ?? false;
+                  const claimed = c.user_progress?.is_points_claimed ?? false;
+                  const isFullyDone = done && claimed;
 
                   return (
-                    <div key={c.challenge_of_the_day_id} className={`flex items-center gap-4 rounded-2xl p-4 transition-all ${done ? "bg-emerald-50/70 opacity-70" : "bg-gray-50 hover:bg-gray-100/70"}`}>
+                    <div key={c.challenge_of_the_day_id} className={`flex items-center gap-4 rounded-2xl p-4 transition-all ${isFullyDone ? "bg-slate-50/70 opacity-60 grayscale-[0.5]" : done ? "bg-emerald-50 outline outline-1 outline-emerald-200 shadow-sm" : "bg-gray-50 hover:bg-gray-100/70"}`}>
                       <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl ${ci.bg} ${ci.color}`}>
-                        {done ? <span className="text-lg">✓</span> : <Icon size={22} />}
+                        <Icon size={22} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={`font-nunito text-sm font-bold text-gray-800 ${done ? "line-through" : ""}`}>{c.nama_challenge}</p>
+                        <p className={`font-nunito text-sm font-bold text-gray-800 ${isFullyDone ? "line-through text-slate-500" : ""}`}>{c.nama_challenge}</p>
                         <p className="font-quicksand text-xs text-gray-400 mt-0.5 truncate">{c.deskripsi}</p>
                         <div className="mt-2 flex items-center gap-2">
                           <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-200">
-                            <div className="h-full rounded-full bg-emerald-500 transition-all duration-500" style={{ width: `${pct}%` }} />
+                            <div className={`h-full rounded-full transition-all duration-500 ${isFullyDone ? "bg-slate-400" : "bg-emerald-500"}`} style={{ width: `${pct}%` }} />
                           </div>
                           <span className="font-quicksand text-[11px] font-semibold text-gray-400">{progress}/{c.target_count}</span>
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                        <span className="font-quicksand text-sm font-bold text-emerald-600">+{c.poin_hadiah}</span>
-                        <span className="font-outfit text-[10px] text-gray-400">poin</span>
+                        {!done && (
+                          <>
+                            <span className="font-quicksand text-sm font-bold text-emerald-600">+{c.poin_hadiah}</span>
+                            <span className="font-outfit text-[10px] text-gray-400">poin</span>
+                          </>
+                        )}
+                        {done && !claimed && (
+                          <button
+                            onClick={() => handleClaim(c.challenge_of_the_day_id)}
+                            disabled={claimingId === c.challenge_of_the_day_id}
+                            className="font-nunito flex-shrink-0 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-600 shadow-md shadow-emerald-200 disabled:opacity-50"
+                          >
+                            {claimingId === c.challenge_of_the_day_id ? "..." : `Claim +${c.poin_hadiah}`}
+                          </button>
+                        )}
+                        {isFullyDone && (
+                          <span className="font-nunito flex-shrink-0 rounded-md bg-slate-200 px-2 py-1 text-xs font-bold leading-4 text-slate-500">
+                            Claimed ✓
+                          </span>
+                        )}
                       </div>
                     </div>
                   );
