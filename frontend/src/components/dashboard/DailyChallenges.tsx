@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { getStoredAuth } from "@/lib/auth";
+import { getStoredAuth, updateStoredPoints } from "@/lib/auth";
 import { Recycle, Share2, Trophy, Star, Eye } from "lucide-react";
 
 interface TodayChallengeData {
@@ -61,6 +61,7 @@ const DailyChallenges: React.FC<DailyChallengesProps> = ({ isOpen, onClose }) =>
   const [challenges, setChallenges] = useState<TodayChallengeData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [claimingId, setClaimingId] = useState<string | null>(null);
 
   const fetchChallenges = useCallback(async () => {
     setLoading(true);
@@ -82,6 +83,32 @@ const DailyChallenges: React.FC<DailyChallengesProps> = ({ isOpen, onClose }) =>
       setLoading(false);
     }
   }, []);
+
+  const handleClaim = async (challengeOfTheDayId: string) => {
+    const auth = getStoredAuth();
+    if (!auth?.token) return;
+    setClaimingId(challengeOfTheDayId);
+    try {
+      const res = await fetch(`${API}/daily-challenges/claim`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${auth.token}` },
+        body: JSON.stringify({ challenge_of_the_day_id: challengeOfTheDayId }),
+      });
+      if (res.ok) {
+        const result = await res.json();
+        const newTotal = result.data.total_poin;
+        
+        await fetchChallenges(); // refresh
+        
+        // Update local storage and trigger global event
+        updateStoredPoints(newTotal);
+      }
+    } catch (e) {
+      console.error("Claim error:", e);
+    } finally {
+      setClaimingId(null);
+    }
+  };
 
   useEffect(() => {
     if (isOpen) fetchChallenges();
@@ -198,39 +225,29 @@ const DailyChallenges: React.FC<DailyChallengesProps> = ({ isOpen, onClose }) =>
                 : progress > 0
                 ? "Progress"
                 : "Not Started";
+              const claimed = c.user_progress?.is_points_claimed ?? false;
+              const isFullyDone = completed && claimed;
 
               return (
                 <div
                   key={c.challenge_of_the_day_id}
-                  className={`relative flex flex-col gap-3 rounded-3xl p-4 ${
-                    completed
-                      ? "bg-emerald-50/50 outline outline-1 outline-offset-[-1px] outline-emerald-100"
+                  className={`relative flex flex-col gap-3 rounded-3xl p-4 transition-all ${
+                    isFullyDone
+                      ? "bg-slate-50 outline outline-1 outline-offset-[-1px] outline-slate-100 opacity-60 grayscale-[0.5]"
+                      : completed
+                      ? "bg-emerald-50 outline outline-1 outline-offset-[-1px] outline-emerald-200 shadow-sm"
                       : "bg-slate-50 outline outline-1 outline-offset-[-1px] outline-slate-100"
                   }`}
                 >
-                  {/* Completed check icon */}
-                  {completed && (
-                    <div className="absolute right-4 top-4">
-                      <div className="flex h-[19px] w-[19px] items-center justify-center rounded-full bg-white" style={{ boxShadow: "0px 1px 2px rgba(0,0,0,0.05)" }}>
-                        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-                          <path
-                            d="M6.45 10.95L11.74 5.66L10.69 4.61L6.45 8.85L4.31 6.71L3.26 7.76L6.45 10.95ZM7.5 15C6.46 15 5.49 14.8 4.58 14.41C3.66 14.02 2.87 13.48 2.19 12.81C1.52 12.13 0.98 11.34 0.59 10.43C0.2 9.51 0 8.54 0 7.5C0 6.46 0.2 5.49 0.59 4.58C0.98 3.66 1.52 2.87 2.19 2.19C2.87 1.52 3.66 0.98 4.58 0.59C5.49 0.2 6.46 0 7.5 0C8.54 0 9.51 0.2 10.43 0.59C11.34 0.98 12.13 1.52 12.81 2.19C13.48 2.87 14.02 3.66 14.41 4.58C14.8 5.49 15 6.46 15 7.5C15 8.54 14.8 9.51 14.41 10.43C14.02 11.34 13.48 12.13 12.81 12.81C12.13 13.48 11.34 14.02 10.43 14.41C9.51 14.8 8.54 15 7.5 15Z"
-                            fill="#10B981"
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className={`flex items-start justify-between ${completed ? "opacity-60" : ""}`}>
+                  <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <div className={`flex h-[34px] w-[34px] flex-shrink-0 items-center justify-center rounded-[16px] ${iconData.bg} ${iconData.color}`}>
                         <iconData.icon size={18} strokeWidth={2.5} />
                       </div>
                       <div className="flex flex-col">
                         <span
-                          className={`font-nunito text-sm font-bold leading-5 text-slate-800 ${
-                            completed ? "line-through" : ""
+                          className={`font-nunito text-sm font-bold leading-5 ${
+                            isFullyDone ? "text-slate-500 line-through" : "text-slate-800"
                           }`}
                         >
                           {c.nama_challenge}
@@ -248,21 +265,30 @@ const DailyChallenges: React.FC<DailyChallengesProps> = ({ isOpen, onClose }) =>
                         +{c.poin_hadiah} Pts
                       </span>
                     )}
-                    {completed && (
-                      <span className="font-nunito flex-shrink-0 rounded-md bg-slate-100 px-2 py-1 text-xs font-bold leading-4 text-slate-400">
-                        Done
+                    {completed && !claimed && (
+                      <button
+                        onClick={() => handleClaim(c.challenge_of_the_day_id)}
+                        disabled={claimingId === c.challenge_of_the_day_id}
+                        className="font-nunito flex-shrink-0 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-600 shadow-md shadow-emerald-200 disabled:opacity-50"
+                      >
+                        {claimingId === c.challenge_of_the_day_id ? "..." : `Claim +${c.poin_hadiah}`}
+                      </button>
+                    )}
+                    {isFullyDone && (
+                      <span className="font-nunito flex-shrink-0 rounded-md bg-slate-200 px-2 py-1 text-xs font-bold leading-4 text-slate-500">
+                        Claimed ✓
                       </span>
                     )}
                   </div>
 
-                  <div className={`flex flex-col gap-1 ${completed ? "opacity-60" : ""}`}>
+                  <div className="flex flex-col gap-1">
                     <div className="flex items-center justify-between">
                       <span className="font-nunito text-xs font-semibold leading-4 text-slate-500">
                         {progressLabel}
                       </span>
                       <span
                         className={`font-nunito text-xs font-semibold leading-4 ${
-                          progress > 0 ? "text-emerald-600" : "text-slate-400"
+                          progress > 0 && !isFullyDone ? "text-emerald-600" : "text-slate-400"
                         }`}
                       >
                         {progress}/{total}
@@ -270,11 +296,13 @@ const DailyChallenges: React.FC<DailyChallengesProps> = ({ isOpen, onClose }) =>
                     </div>
                     <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
                       <div
-                        className="h-2.5 rounded-full bg-emerald-500 transition-all duration-500"
+                        className={`h-2.5 rounded-full transition-all duration-500 ${
+                          isFullyDone ? "bg-slate-400" : "bg-emerald-500"
+                        }`}
                         style={{
                           width: `${total > 0 ? (progress / total) * 100 : 0}%`,
                           boxShadow:
-                            progress > 0
+                            progress > 0 && !isFullyDone
                               ? "0px 0px 10px 0px rgba(16,185,129,0.4)"
                               : "none",
                         }}
