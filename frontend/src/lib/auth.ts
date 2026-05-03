@@ -4,6 +4,7 @@ export type AuthUser = {
   nim: string;
   email: string;
   role: string;
+  fakultas?: string;
   total_poin?: number;
 };
 

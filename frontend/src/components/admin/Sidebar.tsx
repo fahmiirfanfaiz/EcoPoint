@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Target, Gift, Award, LogOut, Home } from "lucide-react";
+import { LayoutDashboard, Users, Target, Gift, Award, TrendingUp, LogOut, Home } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
 
 const navItems = [
@@ -13,6 +13,7 @@ const navItems = [
   { label: "Challenges", href: "/admin/challenges", icon: Target },
   { label: "Badges", href: "/admin/badges", icon: Award },
   { label: "Rewards", href: "/admin/rewards", icon: Gift },
+  { label: "Levels", href: "/admin/levels", icon: TrendingUp },
 ];
 
 export default function Sidebar() {

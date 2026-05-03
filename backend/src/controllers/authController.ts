@@ -207,6 +207,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         nim: user.nim,
         email: user.email,
         role: user.role,
+        fakultas: user.fakultas || "",
         total_poin: Number(user.total_poin),
       },
     });
@@ -229,6 +230,7 @@ export const getMe = async (
         nim: true,
         email: true,
         role: true,
+        fakultas: true,
         total_poin: true,
         created_at: true,
       },
@@ -242,6 +244,7 @@ export const getMe = async (
     res.status(200).json({
       user: {
         ...user,
+        fakultas: user.fakultas || "",
         total_poin: Number(user.total_poin),
       },
     });

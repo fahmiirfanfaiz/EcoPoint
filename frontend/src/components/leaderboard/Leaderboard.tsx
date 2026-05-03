@@ -21,11 +21,7 @@ const rankColors: Record<number, { border: string; bg: string; badge: string; sh
   3: { border: "#f97316", bg: "#fff7ed", badge: "#ea580c", shadow: "rgba(249,115,22,0.2)" },
 };
 
-function formatFakultas(str: string): string {
-  if (!str || str === "-") return "-";
-  // convert "fakultas_teknik" to "Fakultas Teknik"
-  return str.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-}
+
 
 function getInitials(name: string): string {
   if (!name) return "U";
@@ -301,8 +297,8 @@ export default function LeaderboardKampus() {
                         >
                           {player.nama}
                         </p>
-                        <p style={{ color: "#94a3b8", fontSize: 11, marginBottom: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={formatFakultas(player.fakultas)}>
-                          {formatFakultas(player.fakultas)}
+                        <p style={{ color: "#94a3b8", fontSize: 11, marginBottom: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={player.fakultas}>
+                          {player.fakultas}
                         </p>
                         <p
                           style={{
@@ -385,7 +381,7 @@ export default function LeaderboardKampus() {
                     </div>
 
                     {/* Fakultas */}
-                    <span style={{ color: "#64748b", fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", paddingRight: "10px" }} title={formatFakultas(player.fakultas)}>{formatFakultas(player.fakultas)}</span>
+                    <span style={{ color: "#64748b", fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", paddingRight: "10px" }} title={player.fakultas}>{player.fakultas}</span>
 
                     {/* Points */}
                     <div style={{ textAlign: "right" }}>

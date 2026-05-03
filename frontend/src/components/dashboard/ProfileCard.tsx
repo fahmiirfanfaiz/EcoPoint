@@ -3,7 +3,13 @@
 import React from "react";
 import Link from "next/link";
 import { Plus, Zap, Star } from "lucide-react";
-import { getStoredAuth } from "@/lib/auth";
+import { getStoredAuth, API_BASE_URL } from "@/lib/auth";
+
+interface LevelInfo {
+  current: { level_number: number; nama_level: string; syarat_poin: number } | null;
+  next: { level_number: number; nama_level: string; syarat_poin: number } | null;
+  lifetime_poin: number;
+}
 
 interface ProfileCardProps {
   onOpenChallenges?: () => void;
@@ -12,20 +18,72 @@ interface ProfileCardProps {
 const ProfileCard: React.FC<ProfileCardProps> = ({ onOpenChallenges }) => {
   const [userName, setUserName] = React.useState("User");
   const [userNim, setUserNim] = React.useState("");
+  const [userFakultas, setUserFakultas] = React.useState("");
+  const [levelInfo, setLevelInfo] = React.useState<LevelInfo | null>(null);
 
   const syncData = React.useCallback(() => {
     const auth = getStoredAuth();
     if (auth) {
       setUserName(auth.user.nama);
       setUserNim(auth.user.nim);
+      setUserFakultas(auth.user.fakultas || "");
+    }
+  }, []);
+
+  // Fetch level info from dashboard API
+  const fetchLevel = React.useCallback(async () => {
+    const auth = getStoredAuth();
+    if (!auth?.token) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/dashboard`, {
+        headers: { Authorization: `Bearer ${auth.token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.level) {
+          setLevelInfo(data.level);
+        }
+        // Also update fakultas from dashboard user data
+        if (data.user?.fakultas) {
+          setUserFakultas(data.user.fakultas);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to fetch level info:", e);
     }
   }, []);
 
   React.useEffect(() => {
     syncData();
+    fetchLevel();
     window.addEventListener("ecopoint-auth-changed", syncData);
     return () => window.removeEventListener("ecopoint-auth-changed", syncData);
-  }, [syncData]);
+  }, [syncData, fetchLevel]);
+
+  // Level progress calculation
+  const currentLevel = levelInfo?.current;
+  const nextLevel = levelInfo?.next;
+  const lifetimePoin = levelInfo?.lifetime_poin ?? 0;
+
+  let progressPercent = 0;
+  let pointsToNext = 0;
+  if (currentLevel && nextLevel) {
+    const rangeStart = currentLevel.syarat_poin;
+    const rangeEnd = nextLevel.syarat_poin;
+    const range = rangeEnd - rangeStart;
+    const progress = lifetimePoin - rangeStart;
+    progressPercent = range > 0 ? Math.min((progress / range) * 100, 100) : 100;
+    pointsToNext = Math.max(rangeEnd - lifetimePoin, 0);
+  } else if (currentLevel && !nextLevel) {
+    // Max level reached
+    progressPercent = 100;
+    pointsToNext = 0;
+  }
+
+  const levelDisplay = currentLevel
+    ? `Lvl ${currentLevel.level_number}`
+    : "Lvl 1";
+  const levelName = currentLevel?.nama_level ?? "Newcomer";
 
   return (
     <div
@@ -56,7 +114,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onOpenChallenges }) => {
             style={{ boxShadow: "0px 1px 2px rgba(0,0,0,0.05)", outline: "2px solid white", outlineOffset: "-2px" }}
           >
             <Star size={12} className="text-white" fill="white" />
-            <span className="font-quicksand whitespace-nowrap text-xs font-bold leading-4 text-white">Lvl 5</span>
+            <span className="font-quicksand whitespace-nowrap text-xs font-bold leading-4 text-white">{levelDisplay}</span>
           </div>
         </div>
 
@@ -65,18 +123,32 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onOpenChallenges }) => {
           <h1 className="font-quicksand text-[30px] font-bold leading-9 text-gray-800">
             Hello, {userName.split(" ")[0]}! 👋
           </h1>
-          <div className="flex flex-wrap justify-center gap-4 pb-4 md:justify-start">
+          <div className="flex flex-wrap justify-center gap-4 pb-2 md:justify-start">
             <span className="font-outfit rounded-lg bg-emerald-50 px-3 py-1 text-sm leading-5 text-gray-600" style={{ outline: "1px #D1FAE5 solid", outlineOffset: "-1px" }}>
               NIM: {userNim || "N/A"}
             </span>
             <span className="font-outfit rounded-lg bg-emerald-50 px-3 py-1 text-sm leading-5 text-gray-600" style={{ outline: "1px #D1FAE5 solid", outlineOffset: "-1px" }}>
-              Program Studi: Teknologi Informasi
+              {userFakultas || "Fakultas belum diset"}
             </span>
           </div>
-          <div className="relative h-3 w-full overflow-hidden rounded-full bg-gray-100">
-            <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: "60%", background: "linear-gradient(90deg, #10B981 0%, #34D399 100%)" }} />
+
+          {/* Level progress */}
+          <div className="flex items-center gap-2 pb-1">
+            <span className="font-outfit text-xs font-semibold text-amber-600">{levelName}</span>
+            {nextLevel && (
+              <span className="font-outfit text-xs text-gray-400">→ {nextLevel.nama_level}</span>
+            )}
           </div>
-          <p className="font-outfit text-xs leading-4 text-gray-500">120 points to next level</p>
+          <div className="relative h-3 w-full overflow-hidden rounded-full bg-gray-100">
+            <div className="absolute inset-y-0 left-0 rounded-full transition-all duration-700" style={{ width: `${progressPercent}%`, background: "linear-gradient(90deg, #10B981 0%, #34D399 100%)" }} />
+          </div>
+          <p className="font-outfit text-xs leading-4 text-gray-500">
+            {nextLevel
+              ? `${pointsToNext.toLocaleString("id-ID")} poin lagi ke ${nextLevel.nama_level}`
+              : currentLevel
+                ? "Level maksimal tercapai! 🎉"
+                : "Belum ada data level"}
+          </p>
         </div>
 
         {/* Buttons */}
