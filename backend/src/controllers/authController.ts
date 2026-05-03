@@ -8,12 +8,15 @@ const SALT_ROUNDS = 10;
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { nama, nim, email, password, role, fakultas } = req.body;
+    const { nama, nim, password, role, fakultas } = req.body;
+    let { email } = req.body;
 
     if (!nama || !nim || !email || !password || !fakultas) {
       res.status(400).json({ message: "Semua kolom (nama, NIM, email, password, fakultas) wajib diisi" });
       return;
     }
+
+    email = email.toLowerCase();
 
     const existingEmail = await prisma.users.findUnique({
       where: { email },
@@ -66,12 +69,15 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password } = req.body;
+    let { email } = req.body;
+    const { password } = req.body;
 
     if (!email || !password) {
       res.status(400).json({ message: "Email dan password wajib diisi" });
       return;
     }
+
+    email = email.toLowerCase();
 
     const user = await prisma.users.findUnique({
       where: { email },

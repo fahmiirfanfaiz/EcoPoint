@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { FormEvent, useEffect, useState, useRef } from "react";
+import { Eye, EyeOff, ChevronDown } from "lucide-react";
 import { authRequest, saveAuth, type AuthUser } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,29 @@ const initialFormState: FormState = {
   fakultas: "",
 };
 
+const FAKULTAS_LIST = [
+  "Fakultas Biologi",
+  "Fakultas Ekonomika dan Bisnis",
+  "Fakultas Farmasi",
+  "Fakultas Filsafat",
+  "Fakultas Geografi",
+  "Fakultas Hukum",
+  "Fakultas Ilmu Budaya",
+  "Fakultas Ilmu Sosial dan Ilmu Politik",
+  "Fakultas Kedokteran Gigi",
+  "Fakultas Kedokteran Hewan",
+  "Fakultas Kedokteran, Kesehatan Masyarakat, dan Keperawatan (FKKMK)",
+  "Fakultas Kehutanan",
+  "Fakultas Matematika dan Ilmu Pengetahuan Alam",
+  "Fakultas Pertanian",
+  "Fakultas Peternakan",
+  "Fakultas Psikologi",
+  "Fakultas Teknik",
+  "Fakultas Teknologi Pertanian",
+  "Sekolah Vokasi",
+  "Sekolah Pascasarjana"
+];
+
 export default function AuthPage({ mode }: AuthPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -42,6 +65,9 @@ export default function AuthPage({ mode }: AuthPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const isLogin = mode === "login";
   const successEmail = searchParams.get("email") ?? "";
@@ -55,6 +81,16 @@ export default function AuthPage({ mode }: AuthPageProps) {
       setSuccessMessage("Registrasi berhasil! Silakan masuk ke akun Anda.");
     }
   }, [successEmail, registered]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const updateField = (field: keyof FormState, value: string) => {
     setFormState((current) => ({ ...current, [field]: value }));
@@ -177,39 +213,49 @@ export default function AuthPage({ mode }: AuthPageProps) {
 
           {/* Fakultas Field (Register only) */}
           {!isLogin && (
-            <div>
+            <div className="relative" ref={dropdownRef}>
               <Label htmlFor="fakultas" className="mb-2 block text-sm font-medium">
                 Fakultas
               </Label>
-              <select
-                id="fakultas"
-                value={formState.fakultas}
-                onChange={(event) => updateField("fakultas", event.target.value)}
-                required={!isLogin}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="" disabled>Pilih Fakultas</option>
-                <option value="Fakultas Biologi">Fakultas Biologi</option>
-                <option value="Fakultas Ekonomika dan Bisnis">Fakultas Ekonomika dan Bisnis</option>
-                <option value="Fakultas Farmasi">Fakultas Farmasi</option>
-                <option value="Fakultas Filsafat">Fakultas Filsafat</option>
-                <option value="Fakultas Geografi">Fakultas Geografi</option>
-                <option value="Fakultas Hukum">Fakultas Hukum</option>
-                <option value="Fakultas Ilmu Budaya">Fakultas Ilmu Budaya</option>
-                <option value="Fakultas Ilmu Sosial dan Ilmu Politik">Fakultas Ilmu Sosial dan Ilmu Politik</option>
-                <option value="Fakultas Kedokteran Gigi">Fakultas Kedokteran Gigi</option>
-                <option value="Fakultas Kedokteran Hewan">Fakultas Kedokteran Hewan</option>
-                <option value="Fakultas Kedokteran, Kesehatan Masyarakat, dan Keperawatan (FKKMK)">Fakultas Kedokteran, Kesehatan Masyarakat, dan Keperawatan (FKKMK)</option>
-                <option value="Fakultas Kehutanan">Fakultas Kehutanan</option>
-                <option value="Fakultas Matematika dan Ilmu Pengetahuan Alam">Fakultas Matematika dan Ilmu Pengetahuan Alam</option>
-                <option value="Fakultas Pertanian">Fakultas Pertanian</option>
-                <option value="Fakultas Peternakan">Fakultas Peternakan</option>
-                <option value="Fakultas Psikologi">Fakultas Psikologi</option>
-                <option value="Fakultas Teknik">Fakultas Teknik</option>
-                <option value="Fakultas Teknologi Pertanian">Fakultas Teknologi Pertanian</option>
-                <option value="Sekolah Vokasi">Sekolah Vokasi</option>
-                <option value="Sekolah Pascasarjana">Sekolah Pascasarjana</option>
-              </select>
+              <div className="relative">
+                <Input
+                  id="fakultas"
+                  type="text"
+                  placeholder="Ketik untuk mencari fakultas..."
+                  value={formState.fakultas}
+                  onChange={(e) => {
+                    updateField("fakultas", e.target.value);
+                    setDropdownOpen(true);
+                  }}
+                  onFocus={() => setDropdownOpen(true)}
+                  required={!isLogin}
+                  autoComplete="off"
+                />
+                <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <ChevronDown className={`h-4 w-4 transition-transform ${dropdownOpen ? "rotate-180" : ""}`} />
+                </div>
+              </div>
+              
+              {dropdownOpen && (
+                <ul className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md border border-gray-200 bg-white py-1 shadow-lg text-sm">
+                  {FAKULTAS_LIST.filter(f => f.toLowerCase().includes(formState.fakultas.toLowerCase())).length > 0 ? (
+                    FAKULTAS_LIST.filter(f => f.toLowerCase().includes(formState.fakultas.toLowerCase())).map((f, idx) => (
+                      <li
+                        key={idx}
+                        className="cursor-pointer px-3 py-2 transition-colors hover:bg-emerald-50 hover:text-emerald-700"
+                        onClick={() => {
+                          updateField("fakultas", f);
+                          setDropdownOpen(false);
+                        }}
+                      >
+                        {f}
+                      </li>
+                    ))
+                  ) : (
+                    <li className="px-3 py-2 text-gray-500">Tidak ditemukan</li>
+                  )}
+                </ul>
+              )}
             </div>
           )}
 
@@ -222,7 +268,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
               id="email"
               type="email"
               value={formState.email}
-              onChange={(event) => updateField("email", event.target.value)}
+              onChange={(event) => updateField("email", event.target.value.toLowerCase())}
               placeholder="nama@domain.ac.id"
               required
             />
