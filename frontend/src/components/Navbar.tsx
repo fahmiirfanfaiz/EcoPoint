@@ -159,6 +159,9 @@ const Navbar: React.FC = () => {
       </div>
     </div>
   );
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
 
   return (
     <>

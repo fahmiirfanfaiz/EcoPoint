@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Target, Gift, Award, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, Target, Gift, Award, LogOut, Home } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
 
 const navItems = [
@@ -49,7 +49,14 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="border-t border-gray-100 p-4">
+      <div className="border-t border-gray-100 p-4 space-y-2">
+        <Link
+          href="/dashboard"
+          className="flex w-full items-center gap-3 rounded-xl px-4 py-3 font-nunito text-sm font-semibold text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-900"
+        >
+          <Home size={20} />
+          Kembali ke Beranda
+        </Link>
         <button
           onClick={logout}
           className="flex w-full items-center gap-3 rounded-xl px-4 py-3 font-nunito text-sm font-semibold text-red-500 transition-colors hover:bg-red-50"

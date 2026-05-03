@@ -8,10 +8,10 @@ const SALT_ROUNDS = 10;
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { nama, nim, email, password, role } = req.body;
+    const { nama, nim, email, password, role, fakultas } = req.body;
 
-    if (!nama || !nim || !email || !password) {
-      res.status(400).json({ message: "Nama, NIM, email, dan password wajib diisi" });
+    if (!nama || !nim || !email || !password || !fakultas) {
+      res.status(400).json({ message: "Semua kolom (nama, NIM, email, password, fakultas) wajib diisi" });
       return;
     }
 
@@ -42,6 +42,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         email,
         password: hashedPassword,
         role: role ?? "mahasiswa",
+        fakultas,
       },
       select: {
         user_id: true,

@@ -17,6 +17,7 @@ type FormState = {
   email: string;
   password: string;
   confirmPassword: string;
+  fakultas: string;
 };
 
 type AuthPageProps = {
@@ -29,6 +30,7 @@ const initialFormState: FormState = {
   email: "",
   password: "",
   confirmPassword: "",
+  fakultas: "",
 };
 
 export default function AuthPage({ mode }: AuthPageProps) {
@@ -91,6 +93,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
         nim: formState.nim.trim(),
         email: formState.email.trim(),
         password: formState.password,
+        fakultas: formState.fakultas,
       });
 
       router.push(
@@ -169,6 +172,44 @@ export default function AuthPage({ mode }: AuthPageProps) {
                 placeholder="23/xxxxx/TK/xxxxx"
                 required={!isLogin}
               />
+            </div>
+          )}
+
+          {/* Fakultas Field (Register only) */}
+          {!isLogin && (
+            <div>
+              <Label htmlFor="fakultas" className="mb-2 block text-sm font-medium">
+                Fakultas
+              </Label>
+              <select
+                id="fakultas"
+                value={formState.fakultas}
+                onChange={(event) => updateField("fakultas", event.target.value)}
+                required={!isLogin}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="" disabled>Pilih Fakultas</option>
+                <option value="Fakultas Biologi">Fakultas Biologi</option>
+                <option value="Fakultas Ekonomika dan Bisnis">Fakultas Ekonomika dan Bisnis</option>
+                <option value="Fakultas Farmasi">Fakultas Farmasi</option>
+                <option value="Fakultas Filsafat">Fakultas Filsafat</option>
+                <option value="Fakultas Geografi">Fakultas Geografi</option>
+                <option value="Fakultas Hukum">Fakultas Hukum</option>
+                <option value="Fakultas Ilmu Budaya">Fakultas Ilmu Budaya</option>
+                <option value="Fakultas Ilmu Sosial dan Ilmu Politik">Fakultas Ilmu Sosial dan Ilmu Politik</option>
+                <option value="Fakultas Kedokteran Gigi">Fakultas Kedokteran Gigi</option>
+                <option value="Fakultas Kedokteran Hewan">Fakultas Kedokteran Hewan</option>
+                <option value="Fakultas Kedokteran, Kesehatan Masyarakat, dan Keperawatan (FKKMK)">Fakultas Kedokteran, Kesehatan Masyarakat, dan Keperawatan (FKKMK)</option>
+                <option value="Fakultas Kehutanan">Fakultas Kehutanan</option>
+                <option value="Fakultas Matematika dan Ilmu Pengetahuan Alam">Fakultas Matematika dan Ilmu Pengetahuan Alam</option>
+                <option value="Fakultas Pertanian">Fakultas Pertanian</option>
+                <option value="Fakultas Peternakan">Fakultas Peternakan</option>
+                <option value="Fakultas Psikologi">Fakultas Psikologi</option>
+                <option value="Fakultas Teknik">Fakultas Teknik</option>
+                <option value="Fakultas Teknologi Pertanian">Fakultas Teknologi Pertanian</option>
+                <option value="Sekolah Vokasi">Sekolah Vokasi</option>
+                <option value="Sekolah Pascasarjana">Sekolah Pascasarjana</option>
+              </select>
             </div>
           )}
 
