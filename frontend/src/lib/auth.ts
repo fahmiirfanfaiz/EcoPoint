@@ -4,6 +4,9 @@ export type AuthUser = {
   nim: string;
   email: string;
   role: string;
+  fakultas?: string;
+  profile_pic?: number;
+  is_edited?: boolean;
   total_poin?: number;
 };
 
@@ -65,7 +68,13 @@ export function getStoredAuth(): StoredAuth | null {
   }
 
   try {
-    return JSON.parse(rawAuth) as StoredAuth;
+    const parsed = JSON.parse(rawAuth);
+    if (parsed && typeof parsed === "object" && "user" in parsed) {
+      return parsed as StoredAuth;
+    }
+    // Corrupted state, clear it
+    window.localStorage.removeItem(AUTH_STORAGE_KEY);
+    return null;
   } catch {
     window.localStorage.removeItem(AUTH_STORAGE_KEY);
     return null;

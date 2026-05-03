@@ -26,6 +26,9 @@ export const getDashboard = async (
             nim: true,
             email: true,
             role: true,
+            fakultas: true,
+            profile_pic: true,
+            is_edited: true,
             total_poin: true,
             created_at: true,
           },
@@ -103,15 +106,62 @@ export const getDashboard = async (
       return { day, count };
     });
 
+    // ── Compute lifetime points (total earned, ignoring redemptions) ──
+    const redemptionAgg = await prisma.redemptions.aggregate({
+      where: { user_id: userId },
+      _sum: { poin_digunakan: true },
+    });
+    const pointsSpent = Number(redemptionAgg._sum.poin_digunakan || 0);
+    const lifetimePoints = Number(user.total_poin) + pointsSpent;
+
+    // ── Resolve current level ──
+    const allLevels = await prisma.levels.findMany({
+      orderBy: { syarat_poin: "asc" },
+    });
+
+    let currentLevel: { level_number: number; nama_level: string; syarat_poin: number } | null = null;
+    let nextLevel: { level_number: number; nama_level: string; syarat_poin: number } | null = null;
+
+    for (let i = 0; i < allLevels.length; i++) {
+      const lvl = allLevels[i];
+      if (lifetimePoints >= Number(lvl.syarat_poin)) {
+        currentLevel = {
+          level_number: lvl.level_number,
+          nama_level: lvl.nama_level,
+          syarat_poin: Number(lvl.syarat_poin),
+        };
+        // Next level is the one after this
+        if (i + 1 < allLevels.length) {
+          const nxt = allLevels[i + 1];
+          nextLevel = {
+            level_number: nxt.level_number,
+            nama_level: nxt.nama_level,
+            syarat_poin: Number(nxt.syarat_poin),
+          };
+        } else {
+          nextLevel = null; // Max level reached
+        }
+      }
+    }
+
     res.status(200).json({
       user: {
         ...user,
+        fakultas: user.fakultas || "",
+        profile_pic: Number(user.profile_pic),
+        is_edited: user.is_edited,
         total_poin: Number(user.total_poin),
       },
       stats: {
         total_poin: Number(user.total_poin),
+        lifetime_poin: lifetimePoints,
         reports_submitted: reportsCount,
         badges_earned: badgesCount,
+      },
+      level: {
+        current: currentLevel,
+        next: nextLevel,
+        lifetime_poin: lifetimePoints,
       },
       weekly_activity: weeklyActivity,
       recent_achievements: recentBadges.map((ub) => ({

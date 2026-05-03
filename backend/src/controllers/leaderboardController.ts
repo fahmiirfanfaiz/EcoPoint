@@ -25,6 +25,7 @@ export const getLeaderboard = async (
         nama: true,
         nim: true,
         fakultas: true,
+        profile_pic: true,
         total_poin: true,
         _count: {
           select: {
@@ -53,6 +54,7 @@ export const getLeaderboard = async (
         nama: user.nama,
         nim: user.nim,
         fakultas: user.fakultas || "-",
+        profile_pic: Number(user.profile_pic || 0),
         total_poin: lifetimePts, // For leaderboard, 'total_poin' is actually lifetime points
         badges_count: user._count.user_badges,
         reports_count: user._count.waste_reports,
@@ -119,6 +121,7 @@ export const getLeaderboard = async (
       nama: user.nama,
       nim: user.nim,
       fakultas: user.fakultas,
+      profile_pic: user.profile_pic,
       total_poin: user.points_to_sort, // For the UI, we return the sorted points as total_poin
       badges_count: user.badges_count,
       reports_count: user.reports_count,
