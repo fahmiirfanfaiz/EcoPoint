@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { X, Save, AlertTriangle, CheckCircle, Loader2, ShieldAlert } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { X, Save, AlertTriangle, CheckCircle, Loader2, ShieldAlert, ChevronDown } from "lucide-react";
 import { AuthUser, getStoredAuth, saveAuth, API_BASE_URL } from "@/lib/auth";
 
 const FAKULTAS_LIST = [
@@ -27,9 +27,11 @@ const FAKULTAS_LIST = [
   "Sekolah Pascasarjana"
 ];
 
+const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23F1F5F9' /%3E%3Ccircle cx='50' cy='38' r='18' fill='%2394A3B8' /%3E%3Cpath d='M18.5 88.5 C26 74, 37 66, 50 66 C63 66, 74 74, 81.5 88.5 A50 50 0 0 1 18.5 88.5 Z' fill='%2394A3B8' /%3E%3C/svg%3E";
+
 // 6 Hardcoded profile pictures using Dicebear sets — object-contain friendly SVGs
 const AVATAR_OPTIONS = [
-  { id: 0, url: "https://api.dicebear.com/9.x/adventurer/svg?seed=User&backgroundColor=transparent", label: "Default" },
+  { id: 0, url: DEFAULT_AVATAR, label: "Default" },
   { id: 1, url: "https://api.dicebear.com/9.x/bottts/svg?seed=Robot&backgroundColor=transparent", label: "Robot" },
   { id: 2, url: "https://api.dicebear.com/9.x/fun-emoji/svg?seed=Happy&backgroundColor=transparent", label: "Happy Emoji" },
   { id: 3, url: "https://api.dicebear.com/9.x/micah/svg?seed=Cool&backgroundColor=transparent", label: "Cool" },
@@ -63,6 +65,32 @@ export default function EditProfileModal({ isOpen, onClose, user, onSuccess }: E
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (user && isOpen) {
@@ -259,7 +287,7 @@ export default function EditProfileModal({ isOpen, onClose, user, onSuccess }: E
                   </div>
 
                   {/* Fakultas */}
-                  <div>
+                  <div ref={dropdownRef} className="relative">
                     <label className="mb-1.5 block text-sm font-bold text-gray-700">Fakultas</label>
                     {isEdited ? (
                       <input
@@ -269,15 +297,44 @@ export default function EditProfileModal({ isOpen, onClose, user, onSuccess }: E
                         className="w-full rounded-xl border border-gray-200 px-4 py-2.5 bg-gray-50 text-gray-500 cursor-not-allowed"
                       />
                     ) : (
-                      <select
-                        required
-                        value={form.fakultas}
-                        onChange={(e) => setForm({ ...form, fakultas: e.target.value })}
-                        className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-                      >
-                        <option value="" disabled>Pilih Fakultas</option>
-                        {FAKULTAS_LIST.map(f => <option key={f} value={f}>{f}</option>)}
-                      </select>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="Ketik untuk mencari fakultas..."
+                          value={form.fakultas}
+                          onChange={(e) => {
+                            setForm({ ...form, fakultas: e.target.value });
+                            setDropdownOpen(true);
+                          }}
+                          onFocus={() => setDropdownOpen(true)}
+                          required
+                          autoComplete="off"
+                          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                        />
+                        <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                          <ChevronDown className={`h-4 w-4 transition-transform ${dropdownOpen ? "rotate-180" : ""}`} />
+                        </div>
+                        {dropdownOpen && (
+                          <ul className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-xl border border-gray-200 bg-white py-1 shadow-lg text-sm">
+                            {FAKULTAS_LIST.filter(f => f.toLowerCase().includes(form.fakultas.toLowerCase())).length > 0 ? (
+                              FAKULTAS_LIST.filter(f => f.toLowerCase().includes(form.fakultas.toLowerCase())).map((f, idx) => (
+                                <li
+                                  key={idx}
+                                  className="cursor-pointer px-4 py-2.5 transition-colors hover:bg-emerald-50 hover:text-emerald-700 font-medium"
+                                  onClick={() => {
+                                    setForm({ ...form, fakultas: f });
+                                    setDropdownOpen(false);
+                                  }}
+                                >
+                                  {f}
+                                </li>
+                              ))
+                            ) : (
+                              <li className="px-4 py-3 text-gray-500 italic text-center">Fakultas tidak ditemukan</li>
+                            )}
+                          </ul>
+                        )}
+                      </div>
                     )}
                   </div>
 

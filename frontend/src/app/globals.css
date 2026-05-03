@@ -77,14 +77,13 @@ body {
   font-family: var(--font-jakarta), 'Plus Jakarta Sans', sans-serif;
 }
 
-/* Scrollbar styling */
+/* Hide scrollbars globally but keep functionality */
 ::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
+  display: none;
+  width: 0px;
   background: transparent;
 }
-::-webkit-scrollbar-thumb {
-  background: var(--color-gray-300);
-  border-radius: 9999px;
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
 }

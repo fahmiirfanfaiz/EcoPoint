@@ -4,8 +4,9 @@ import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { clearStoredAuth, getStoredAuth } from "@/lib/auth";
+import { clearStoredAuth, getStoredAuth, AuthUser } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { getAvatarUrl } from "@/components/dashboard/EditProfileModal";
 
 const navLinks = [
   { label: "Beranda", href: "/dashboard" },
@@ -20,6 +21,7 @@ const Navbar: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [userObj, setUserObj] = useState<AuthUser | null>(null);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -40,6 +42,7 @@ const Navbar: React.FC = () => {
       setIsAuthenticated(Boolean(auth));
       setUserName(auth?.user?.nama || null);
       setUserRole(auth?.user?.role || null);
+      setUserObj(auth?.user || null);
     };
 
     syncAuthState();
@@ -98,18 +101,13 @@ const Navbar: React.FC = () => {
           className="flex items-center gap-2 rounded-full p-1 hover:bg-gray-50 transition-colors focus:outline-none"
         >
           <div
-            className="flex h-9 w-9 items-center justify-center rounded-full p-[1.5px]"
+            className="flex h-9 w-9 items-center justify-center rounded-full p-[1.5px] overflow-hidden"
             style={{
               background: "linear-gradient(45deg, #34D399, #14B8A6)",
             }}
           >
-            <div className="flex h-full w-full items-center justify-center rounded-full bg-white">
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                <path
-                  d="M8 8c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
-                  fill="#94A3B8"
-                />
-              </svg>
+            <div className="flex h-full w-full items-center justify-center rounded-full bg-white overflow-hidden">
+              <img src={userObj ? getAvatarUrl(userObj, userObj.profile_pic) : getAvatarUrl({} as any, 0)} alt="Profile" className="h-full w-full object-contain p-1" />
             </div>
           </div>
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className={`transition-transform ${profileDropdownOpen ? 'rotate-180' : ''}`}>
