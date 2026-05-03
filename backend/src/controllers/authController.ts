@@ -208,6 +208,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         email: user.email,
         role: user.role,
         fakultas: user.fakultas || "",
+        profile_pic: Number(user.profile_pic),
+        is_edited: user.is_edited,
         total_poin: Number(user.total_poin),
       },
     });
@@ -231,6 +233,8 @@ export const getMe = async (
         email: true,
         role: true,
         fakultas: true,
+        profile_pic: true,
+        is_edited: true,
         total_poin: true,
         created_at: true,
       },
@@ -245,6 +249,7 @@ export const getMe = async (
       user: {
         ...user,
         fakultas: user.fakultas || "",
+        profile_pic: Number(user.profile_pic),
         total_poin: Number(user.total_poin),
       },
     });
@@ -254,4 +259,93 @@ export const getMe = async (
   }
 };
 
-export default { register, login, getMe };
+export const updateProfile = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const { nama, nim, email, fakultas, profile_pic } = req.body;
+
+    const user = await prisma.users.findUnique({
+      where: { user_id: req.userId },
+    });
+
+    if (!user) {
+      res.status(404).json({ message: "User tidak ditemukan" });
+      return;
+    }
+
+    const isEdited = user.is_edited;
+    let dataToUpdate: any = {};
+    let willBeEdited = false;
+
+    // Email and profile_pic are always updatable
+    if (email !== undefined && email !== user.email) {
+      dataToUpdate.email = email.toLowerCase();
+    }
+    if (profile_pic !== undefined) {
+      dataToUpdate.profile_pic = BigInt(profile_pic);
+    }
+
+    // Nama, NIM, Fakultas are only updatable if NOT already edited
+    if (!isEdited) {
+      if (nama !== undefined && nama !== user.nama) {
+        dataToUpdate.nama = nama;
+        willBeEdited = true;
+      }
+      if (nim !== undefined && nim !== user.nim) {
+        dataToUpdate.nim = nim;
+        willBeEdited = true;
+      }
+      if (fakultas !== undefined && fakultas !== user.fakultas) {
+        dataToUpdate.fakultas = fakultas;
+        willBeEdited = true;
+      }
+    }
+
+    if (willBeEdited) {
+      dataToUpdate.is_edited = true;
+    }
+
+    if (Object.keys(dataToUpdate).length === 0) {
+      res.status(200).json({ message: "Tidak ada perubahan", user });
+      return;
+    }
+
+    const updatedUser = await prisma.users.update({
+      where: { user_id: req.userId },
+      data: dataToUpdate,
+      select: {
+        user_id: true,
+        nama: true,
+        nim: true,
+        email: true,
+        role: true,
+        fakultas: true,
+        profile_pic: true,
+        is_edited: true,
+        total_poin: true,
+        created_at: true,
+      },
+    });
+
+    res.status(200).json({
+      message: "Profil berhasil diperbarui",
+      user: {
+        ...updatedUser,
+        fakultas: updatedUser.fakultas || "",
+        profile_pic: Number(updatedUser.profile_pic),
+        total_poin: Number(updatedUser.total_poin),
+      },
+    });
+  } catch (error: any) {
+    console.error("Update profile error:", error);
+    if (error.code === 'P2002') {
+      res.status(409).json({ message: "Email atau NIM sudah digunakan" });
+      return;
+    }
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export default { register, login, getMe, updateProfile };

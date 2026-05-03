@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getStoredAuth, updateStoredPoints } from "@/lib/auth";
 import DailyChallenges from "@/components/dashboard/DailyChallenges";
+import { getAvatarUrl } from "@/components/dashboard/EditProfileModal";
 import {
   Zap, ChevronRight, Plus, Trophy, Recycle, Loader2,
   Target, Star, TrendingUp, Award, Flame, BarChart3, Gift
@@ -26,6 +27,7 @@ interface TodayChallengeItem {
 interface LeaderboardUser {
   rank: number;
   nama: string;
+  profile_pic: number;
   total_poin: number;
   reports_count: number;
 }
@@ -329,7 +331,7 @@ export default function BerandaPage() {
                     <span className="w-8 text-center font-nunito text-lg font-extrabold">
                       {i < 3 ? medals[i] : <span className="text-sm text-gray-400">{u.rank}</span>}
                     </span>
-                    <img src={`https://api.dicebear.com/9.x/adventurer/svg?seed=${u.nama}`} alt="" className="h-9 w-9 rounded-full bg-gray-100 flex-shrink-0" />
+                    <img src={getAvatarUrl({ nama: u.nama } as any, u.profile_pic)} alt="" className="h-9 w-9 rounded-full bg-white flex-shrink-0 object-contain p-0.5" style={{ border: "1px solid #e2e8f0" }} />
                     <div className="flex-1 min-w-0">
                       <p className="font-nunito text-sm font-bold text-gray-800 truncate">{u.nama}</p>
                       <p className="font-quicksand text-[11px] text-gray-400">{u.reports_count} laporan</p>

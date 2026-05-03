@@ -96,6 +96,8 @@ model users {
   role                  String                  @default("'mahasiswa'")
   email                 String                  @unique
   fakultas              String                  @default("")
+  profile_pic           BigInt                  @default(0)
+  is_edited             Boolean                 @default(false)
   notifications         notifications[]
   redemptions           redemptions[]
   user_badges           user_badges[]

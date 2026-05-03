@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { API_BASE_URL } from "@/lib/auth";
+import { getAvatarUrl } from "@/components/dashboard/EditProfileModal";
 
 type Period = "mingguan" | "sepanjang-waktu";
 
@@ -11,6 +12,7 @@ interface LeaderboardUser {
   nim: string;
   fakultas: string;
   total_poin: number;
+  profile_pic: number;
   badges_count: number;
   reports_count: number;
 }
@@ -23,27 +25,7 @@ const rankColors: Record<number, { border: string; bg: string; badge: string; sh
 
 
 
-function getInitials(name: string): string {
-  if (!name) return "U";
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
-}
 
-function getAvatarBg(name: string): string {
-  const colors = [
-    "#f0e6d6", "#e8e0f8", "#e6f0e8", "#dbeafe",
-    "#fce7f3", "#ede9fe", "#dcfce7", "#d1fae5"
-  ];
-  if (!name) return colors[0];
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return colors[Math.abs(hash) % colors.length];
-}
 
 function Avatar({
   initials,
@@ -76,7 +58,7 @@ function Avatar({
       }}
     >
       {src ? (
-        <img src={src} alt={initials} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        <img src={src} alt={initials} style={{ width: "100%", height: "100%", objectFit: "contain", padding: 4 }} />
       ) : (
         initials
       )}
@@ -234,10 +216,11 @@ export default function LeaderboardKampus() {
                           }}
                         >
                           <Avatar
-                            initials={getInitials(player.nama)}
-                            bg={getAvatarBg(player.nama)}
+                            initials=""
+                            bg="#f8fafc"
                             size={is1st ? 70 : 56}
                             fontSize={is1st ? 20 : 15}
+                            src={getAvatarUrl({ nama: player.nama } as any, player.profile_pic)}
                           />
                         </div>
                         {/* Rank badge */}
@@ -374,7 +357,7 @@ export default function LeaderboardKampus() {
 
                     {/* Student */}
                     <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                      <Avatar initials={getInitials(player.nama)} bg={getAvatarBg(player.nama)} size={34} fontSize={11} />
+                      <Avatar initials="" bg="#f8fafc" size={34} fontSize={11} src={getAvatarUrl({ nama: player.nama } as any, player.profile_pic)} />
                       <span style={{ fontWeight: 700, color: "#0f172a", fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={player.nama}>
                         {player.nama}
                       </span>

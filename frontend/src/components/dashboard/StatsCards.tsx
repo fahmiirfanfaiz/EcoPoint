@@ -42,6 +42,8 @@ const StatsCards: React.FC = () => {
     const auth = getStoredAuth();
     if (auth) {
       setTotalPoints(auth.user.total_poin || 0);
+    } else {
+      setTotalPoints(0);
     }
   }, []);
 

@@ -2,8 +2,9 @@
 
 import React from "react";
 import Link from "next/link";
-import { Plus, Zap, Star } from "lucide-react";
-import { getStoredAuth, API_BASE_URL } from "@/lib/auth";
+import { Settings, Plus, Zap, Star } from "lucide-react";
+import { AuthUser, getStoredAuth, API_BASE_URL } from "@/lib/auth";
+import EditProfileModal, { getAvatarUrl } from "./EditProfileModal";
 
 interface LevelInfo {
   current: { level_number: number; nama_level: string; syarat_poin: number } | null;
@@ -16,17 +17,16 @@ interface ProfileCardProps {
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({ onOpenChallenges }) => {
-  const [userName, setUserName] = React.useState("User");
-  const [userNim, setUserNim] = React.useState("");
-  const [userFakultas, setUserFakultas] = React.useState("");
+  const [user, setUser] = React.useState<AuthUser | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [levelInfo, setLevelInfo] = React.useState<LevelInfo | null>(null);
 
   const syncData = React.useCallback(() => {
     const auth = getStoredAuth();
     if (auth) {
-      setUserName(auth.user.nama);
-      setUserNim(auth.user.nim);
-      setUserFakultas(auth.user.fakultas || "");
+      setUser(auth.user);
+    } else {
+      setUser(null);
     }
   }, []);
 
@@ -43,9 +43,10 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onOpenChallenges }) => {
         if (data.level) {
           setLevelInfo(data.level);
         }
-        // Also update fakultas from dashboard user data
-        if (data.user?.fakultas) {
-          setUserFakultas(data.user.fakultas);
+        if (data.user) {
+          // If the dashboard returns user, we can merge it or let syncData handle it
+          // Wait, dashboard doesn't update local storage. Let's rely on local storage for profile data 
+          // but we can update state here if we want.
         }
       }
     } catch (e) {
@@ -107,8 +108,15 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onOpenChallenges }) => {
               outlineOffset: "-4px",
             }}
           >
-            <img src={`https://api.dicebear.com/9.x/adventurer/svg?seed=${userName}`} alt="Avatar" className="h-full w-full object-cover" />
+            <img src={user ? getAvatarUrl(user, user.profile_pic) : getAvatarUrl({} as any, 0)} alt="Avatar" className="h-full w-full object-contain bg-white p-2" />
           </div>
+          <button
+            onClick={() => setIsEditModalOpen(true)}
+            className="absolute -right-2 top-0 rounded-full bg-white p-2 text-gray-400 shadow-md transition-colors hover:text-emerald-500 hover:bg-emerald-50"
+            title="Edit Profil"
+          >
+            <Settings size={18} />
+          </button>
           <div
             className="absolute bottom-0 left-1/2 flex -translate-x-2 -translate-y-1 items-center gap-1 rounded-full bg-amber-500 px-3 py-1.5"
             style={{ boxShadow: "0px 1px 2px rgba(0,0,0,0.05)", outline: "2px solid white", outlineOffset: "-2px" }}
@@ -121,14 +129,14 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onOpenChallenges }) => {
         {/* Info */}
         <div className="flex flex-1 flex-col gap-2 text-center md:text-left">
           <h1 className="font-quicksand text-[30px] font-bold leading-9 text-gray-800">
-            Hello, {userName.split(" ")[0]}! 👋
+            Hello, {user?.nama?.split(" ")[0] || "User"}! 👋
           </h1>
           <div className="flex flex-wrap justify-center gap-4 pb-2 md:justify-start">
             <span className="font-outfit rounded-lg bg-emerald-50 px-3 py-1 text-sm leading-5 text-gray-600" style={{ outline: "1px #D1FAE5 solid", outlineOffset: "-1px" }}>
-              NIM: {userNim || "N/A"}
+              NIM: {user?.nim || "N/A"}
             </span>
             <span className="font-outfit rounded-lg bg-emerald-50 px-3 py-1 text-sm leading-5 text-gray-600" style={{ outline: "1px #D1FAE5 solid", outlineOffset: "-1px" }}>
-              {userFakultas || "Fakultas belum diset"}
+              {user?.fakultas || "Fakultas belum diset"}
             </span>
           </div>
 
@@ -171,6 +179,16 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onOpenChallenges }) => {
           </button>
         </div>
       </div>
+
+      <EditProfileModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        user={user}
+        onSuccess={() => {
+          setIsEditModalOpen(false);
+          syncData(); // Re-sync from localStorage
+        }}
+      />
     </div>
   );
 };

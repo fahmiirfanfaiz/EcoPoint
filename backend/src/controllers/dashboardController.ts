@@ -27,6 +27,8 @@ export const getDashboard = async (
             email: true,
             role: true,
             fakultas: true,
+            profile_pic: true,
+            is_edited: true,
             total_poin: true,
             created_at: true,
           },
@@ -146,6 +148,8 @@ export const getDashboard = async (
       user: {
         ...user,
         fakultas: user.fakultas || "",
+        profile_pic: Number(user.profile_pic),
+        is_edited: user.is_edited,
         total_poin: Number(user.total_poin),
       },
       stats: {
