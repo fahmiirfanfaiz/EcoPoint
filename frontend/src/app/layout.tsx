@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
-import { Nunito, Quicksand, Outfit, Plus_Jakarta_Sans } from "next/font/google";
+import localFont from "next/font/local";
+import { Quicksand, Outfit, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { AuthProvider } from "@/lib/auth/AuthContext";
 
-const nunito = Nunito({
-  subsets: ["latin"],
-  weight: ["400", "700", "800"],
+const nunito = localFont({
+  src: "../../public/fonts/nunito.regular.ttf",
+  weight: "400",
+  style: "normal",
   display: "swap",
   variable: "--font-nunito",
 });

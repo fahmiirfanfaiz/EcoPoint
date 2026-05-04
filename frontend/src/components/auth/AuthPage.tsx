@@ -163,7 +163,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
 
         {/* Success Message */}
         {successMessage && (
-          <div className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          <div className="mb-6 rounded-lg border border-white bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
             {successMessage}
           </div>
         )}
