@@ -75,6 +75,8 @@ export default function BerandaPage() {
       if (res.ok) {
         const result = await res.json();
         updateStoredPoints(result.data.total_poin);
+        // Refresh all data to get updated level and challenges
+        fetchAll();
       }
     } catch (e) {
       console.error("Claim error:", e);
