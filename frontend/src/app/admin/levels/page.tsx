@@ -49,6 +49,17 @@ export default function AdminLevels() {
     } catch (e) { console.error(e); } finally { setIsLoading(false); }
   }, []);
 
+  useEffect(() => {
+    if (modalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [modalOpen]);
+
   useEffect(() => { fetchLevels(); }, [fetchLevels]);
 
   const openNew = () => {

@@ -71,6 +71,17 @@ export default function AdminBadges() {
     } catch (e) { console.error(e); } finally { setIsLoading(false); }
   }, [hdrs]);
 
+  useEffect(() => {
+    if (modalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [modalOpen]);
+
   useEffect(() => { if (token) fetchBadges(); }, [token, fetchBadges]);
 
   const openNew = () => { setIsEditing(false); setForm({ badges_id: "", nama_badge: "", deskripsi: "", jenis_syarat: "TOTAL_POIN", nilai_syarat: 100 }); setShowPresets(true); setModalOpen(true); };

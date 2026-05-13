@@ -66,6 +66,17 @@ export default function AdminChallenges() {
     } catch (e) { console.error(e); } finally { setIsLoading(false); }
   }, [hdrs]);
 
+  useEffect(() => {
+    if (modalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [modalOpen]);
+
   useEffect(() => { if (token) fetchAll(); }, [token, fetchAll]);
 
   const openNew = () => { setIsEditing(false); setForm({ challenge_id: "", nama_challenge: "", deskripsi: "", poin_hadiah: 25, target_count: 1, challenge_type: "waste_report", is_active: true, is_permanent: false }); setShowPresets(true); setModalOpen(true); };

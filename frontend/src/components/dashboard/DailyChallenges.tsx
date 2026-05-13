@@ -111,7 +111,15 @@ const DailyChallenges: React.FC<DailyChallengesProps> = ({ isOpen, onClose }) =>
   };
 
   useEffect(() => {
-    if (isOpen) fetchChallenges();
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+      fetchChallenges();
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [isOpen, fetchChallenges]);
 
   // Calculate countdown to midnight
