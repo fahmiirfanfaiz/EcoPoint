@@ -315,12 +315,12 @@ export default function EditProfileModal({ isOpen, onClose, user, onSuccess }: E
                           <ChevronDown className={`h-4 w-4 transition-transform ${dropdownOpen ? "rotate-180" : ""}`} />
                         </div>
                         {dropdownOpen && (
-                          <ul className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-xl border border-gray-200 bg-white py-1 shadow-lg text-sm">
+                          <ul className="absolute z-10 mt-1 max-h-40 w-full overflow-auto rounded-xl border border-gray-200 bg-white py-1 shadow-lg text-sm">
                             {FAKULTAS_LIST.filter(f => f.toLowerCase().includes(form.fakultas.toLowerCase())).length > 0 ? (
                               FAKULTAS_LIST.filter(f => f.toLowerCase().includes(form.fakultas.toLowerCase())).map((f, idx) => (
                                 <li
                                   key={idx}
-                                  className="cursor-pointer px-4 py-2.5 transition-colors hover:bg-emerald-50 hover:text-emerald-700 font-medium"
+                                  className="cursor-pointer px-4 py-2 transition-colors hover:bg-emerald-50 hover:text-emerald-700 font-medium"
                                   onClick={() => {
                                     setForm({ ...form, fakultas: f });
                                     setDropdownOpen(false);
