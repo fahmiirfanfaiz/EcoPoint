@@ -9,6 +9,7 @@ import rewardsRoutes from "./routes/rewardsRoute.js";
 import badgeRoutes from "./routes/badgeRoute.js";
 import dailyChallengeRoutes from "./routes/dailyChallengeRoute.js";
 import levelRoutes from "./routes/levelRoute.js";
+import usersRoutes from "./routes/usersRoute.js";
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -19,7 +20,7 @@ app.use(
   cors({
     origin: ["http://localhost:3000", "http://127.0.0.1:3000"],
     credentials: true,
-  })
+  }),
 );
 app.use(express.json());
 
@@ -31,6 +32,7 @@ app.use("/api/rewards", rewardsRoutes);
 app.use("/api/badges", badgeRoutes);
 app.use("/api/daily-challenges", dailyChallengeRoutes);
 app.use("/api/levels", levelRoutes);
+app.use("/api/admin/users", usersRoutes);
 
 // ── Health check ───────────────────────────────────────────
 app.get("/api/health", (_req, res) => {
@@ -43,11 +45,11 @@ app.use(
     err: Error,
     _req: express.Request,
     res: express.Response,
-    _next: express.NextFunction
+    _next: express.NextFunction,
   ) => {
     console.error("Unhandled error:", err);
     res.status(500).json({ message: "Internal server error" });
-  }
+  },
 );
 
 // ── Start ──────────────────────────────────────────────────
@@ -76,6 +78,10 @@ app.listen(port, () => {
   console.log(`   - PUT    /api/daily-challenges/admin/:id`);
   console.log(`   - DELETE /api/daily-challenges/admin/:id`);
   console.log(`   - GET    /api/levels`);
+  console.log(`   - GET    /api/admin/users`);
+  console.log(`   - GET    /api/admin/users/:id`);
+  console.log(`   - PUT    /api/admin/users/:id`);
+  console.log(`   - DELETE /api/admin/users/:id`);
   console.log(`   - POST   /api/levels/admin`);
   console.log(`   - PUT    /api/levels/admin/:id`);
   console.log(`   - DELETE /api/levels/admin/:id`);
