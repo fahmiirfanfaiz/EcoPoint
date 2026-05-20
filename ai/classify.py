@@ -19,15 +19,30 @@ MODEL_NAME = "gemini-2.5-flash" # Gunakan model Flash yang stabil dan dukung mul
 class WasteCategory(str, Enum):
     ORGANIK = "organik"
     ANORGANIK = "anorganik"
-    B3 = "bahan berbahaya & beracun"
+    B3 = "bahan berbahaya dan beracun"
     KERTAS = "kertas"
     RESIDU = "residu yang dibungkus"
 
 # 2. Definisikan Schema Output menggunakan Pydantic
 class WasteClassification(BaseModel):
     category: WasteCategory = Field(description="Kategori jenis sampah")
-    confidence: float = Field(description="Tingkat keyakinan AI dari 0.0 sampai 1.0")
+    confidence: float = Field(description="Tingkat keyakinan AI dari angka 0.0 sampai 1.0")
     explanation: str = Field(description="Alasan singkat 1-2 kalimat mengapa masuk kategori ini")
+
+class CleanupStatus(str, Enum):
+    CLEANED = "cleaned"
+    NOT_CLEANED = "not_cleaned"
+    PARTIALLY_CLEANED = "partially_cleaned"
+    UNRELATED = "unrelated_images"
+
+class CleanupClassification(BaseModel):
+    status: CleanupStatus = Field(description="Status kebersihan berdasarkan gambar masukan")
+    confidence: float = Field(description="Tingkat keyakinan AI dari angka 0.0 sampai 1.0")
+    before_description: Optional[str] = Field(description="Deskripsi singkat kondisi sebelum dibersihkan")
+    after_description: Optional[str] = Field(description="Deskripsi singkat kondisi setelah dibersihkan")
+    explanation: str = Field(description="Alasan singkat 1-2 kalimat mengapa masuk status ini")
+    reward_eligible: bool = Field(description="Apakah status ini memenuhi syarat untuk reward")
+
 
 def classify_waste(description: Optional[str] = None, image_bytes: Optional[bytes] = None, mime_type: str = "image/jpeg") -> dict:
     """
@@ -75,6 +90,49 @@ def classify_waste(description: Optional[str] = None, image_bytes: Optional[byte
             "category": "error",
             "confidence": 0.0,
             "explanation": f"Failed to call Gemini API: {str(e)}"
+        }
+    
+def verify_cleanup(before_image: bytes, after_image: bytes, before_mime: str = "image/jpeg", after_mime: str = "image/jpeg", location: Optional[str] = None) -> dict:
+    """
+    Fungsi untuk memverifikasi apakah suatu area sudah dibersihkan berdasarkan gambar sebelum dan sesudah.
+    Outputnya mengikuti skema CleanupClassification.
+    """
+    contents = []
+    
+    system_instruction = """
+    Kamu adalah sistem AI pakar lingkungan. Tugasmu menentukan apakah suatu area sudah dibersihkan berdasarkan gambar sebelum dan sesudah.
+    Kategorikan statusnya sebagai cleaned, not cleaned, partially cleaned, atau unrelated_images.
+    """
+    contents.append(system_instruction)
+
+    if location:
+        contents.append(f"Lokasi sampah: {location}")
+
+    # Kirim gambar sebelum dan sesudah
+    contents.append(types.Part.from_bytes(data=before_image, mime_type=before_mime))
+    contents.append(types.Part.from_bytes(data=after_image, mime_type=after_mime))
+
+    try:
+        response = client.models.generate_content(
+            model=MODEL_NAME,
+            contents=contents,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=CleanupClassification,
+                temperature=0.1
+            )
+        )
+        
+        return json.loads(response.text)
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "confidence": 0.0,
+            "before_description": None,
+            "after_description": None,
+            "explanation": f"Failed to call Gemini API: {str(e)}",
+            "reward_eligible": False
         }
 
 if __name__ == "__main__":
