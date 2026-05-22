@@ -45,6 +45,8 @@ export default function AdminChallenges() {
   const [todayChallenges, setTodayChallenges] = useState<TodayChallenge[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [globalBonus, setGlobalBonus] = useState<number | string>(0);
+  const [savingBonus, setSavingBonus] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: "ok" | "err" } | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -57,12 +59,14 @@ export default function AdminChallenges() {
 
   const fetchAll = useCallback(async () => {
     try {
-      const [chRes, tdRes] = await Promise.all([
+      const [chRes, tdRes, bonusRes] = await Promise.all([
         fetch(`${API}/admin/all`, { headers: hdrs() }),
         fetch(`${API}/admin/today`, { headers: hdrs() }),
+        fetch(`${API}/admin/bonus`, { headers: hdrs() }),
       ]);
       if (chRes.ok) { const d = await chRes.json(); setChallenges(d.challenges ?? []); }
       if (tdRes.ok) { const d = await tdRes.json(); setTodayChallenges(d.challenges ?? []); }
+      if (bonusRes.ok) { const d = await bonusRes.json(); setGlobalBonus(d.bonus ?? 0); }
     } catch (e) { console.error(e); } finally { setIsLoading(false); }
   }, [hdrs]);
 
@@ -94,6 +98,16 @@ export default function AdminChallenges() {
       flash(isEditing ? "Challenge berhasil diupdate!" : "Challenge berhasil dibuat!");
       setModalOpen(false); await fetchAll();
     } catch (e: any) { flash(e.message || "Gagal menyimpan", "err"); } finally { setSaving(false); }
+  };
+
+  const handleSaveBonus = async () => {
+    setSavingBonus(true);
+    try {
+      const bonusValue = typeof globalBonus === "string" ? parseInt(globalBonus) || 0 : globalBonus;
+      const res = await fetch(`${API}/admin/bonus`, { method: "PUT", headers: hdrs(), body: JSON.stringify({ bonus: bonusValue }) });
+      if (!res.ok) throw new Error("Gagal menyimpan bonus");
+      flash("Bonus berhasil diupdate!");
+    } catch (e: any) { flash(e.message, "err"); } finally { setSavingBonus(false); }
   };
 
   const handleDelete = (id: string) => {
@@ -160,6 +174,22 @@ export default function AdminChallenges() {
         ) : (
           <p className="font-quicksand text-gray-500">Belum ada challenge untuk hari ini. Challenge akan otomatis terpilih saat user pertama kali mengakses (permanent + random).</p>
         )}
+      </div>
+
+      {/* Global Settings */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="font-nunito text-lg font-bold text-gray-900">Bonus Selesai Semua</h2>
+            <p className="font-quicksand text-sm text-gray-500">Poin tambahan yang diberikan otomatis ketika user menyelesaikan seluruh daily challenge hari ini.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <input type="number" min={0} value={globalBonus} onChange={(e) => setGlobalBonus(e.target.value === "" ? "" : parseInt(e.target.value) || 0)} className="w-24 rounded-xl border border-gray-200 px-3 py-2.5 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 font-bold text-center text-lg" />
+            <button onClick={handleSaveBonus} disabled={savingBonus} className="flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 font-bold text-white shadow-sm transition-all hover:bg-emerald-600 hover:shadow-md disabled:opacity-50">
+              {savingBonus ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />} Simpan
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Header */}
