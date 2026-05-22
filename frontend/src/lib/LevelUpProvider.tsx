@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { getStoredAuth, API_BASE_URL } from "@/lib/auth";
 import LevelUpModal from "@/components/shared/LevelUpModal";
+import BadgeModal from "@/components/shared/BadgeModal";
 
 interface LevelUpContextType {
   checkLevelUp: () => void;
@@ -21,6 +22,12 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
     levelName: string;
   }>({ isOpen: false, levelNumber: 0, levelName: "" });
 
+  const [badgesToCelebrate, setBadgesToCelebrate] = useState<Array<{
+    badges_id: string;
+    nama_badge: string;
+    deskripsi: string;
+  }>>([]);
+
   const checkLevelUp = useCallback(async () => {
     const auth = getStoredAuth();
     if (!auth?.token || !auth.user?.user_id) return;
@@ -33,22 +40,44 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
       const data = await res.json();
 
       const currentLvl = data.level?.current;
-      if (!currentLvl) return;
+      const badgesCount = data.stats?.badges_earned;
+      const recentBadge = data.recent_achievements?.[0];
 
-      const storageKey = `ecopoint_last_level_${auth.user.user_id}`;
-      const lastSeen = parseInt(window.localStorage.getItem(storageKey) || "0", 10);
+      if (currentLvl) {
+        const storageKey = `ecopoint_last_level_${auth.user.user_id}`;
+        const storedLvl = window.localStorage.getItem(storageKey);
 
-      if (lastSeen > 0 && currentLvl.level_number > lastSeen) {
-        // Level up detected!
-        setLevelUpData({
-          isOpen: true,
-          levelNumber: currentLvl.level_number,
-          levelName: currentLvl.nama_level,
-        });
+        if (storedLvl !== null) {
+          const lastSeen = parseInt(storedLvl, 10);
+          if (currentLvl.level_number > lastSeen) {
+            // Level up detected!
+            setLevelUpData({
+              isOpen: true,
+              levelNumber: currentLvl.level_number,
+              levelName: currentLvl.nama_level,
+            });
+          }
+        }
+        window.localStorage.setItem(storageKey, currentLvl.level_number.toString());
       }
 
-      // Always update the stored level
-      window.localStorage.setItem(storageKey, currentLvl.level_number.toString());
+      if (badgesCount !== undefined) {
+        const badgeStorageKey = `ecopoint_last_badge_count_${auth.user.user_id}`;
+        const storedVal = window.localStorage.getItem(badgeStorageKey);
+        
+        if (storedVal !== null) {
+          const lastBadgeCount = parseInt(storedVal, 10);
+          const diff = badgesCount - lastBadgeCount;
+          if (diff > 0) {
+            // New badge(s) earned!
+            const newBadges = data.recent_achievements?.slice(0, diff) || [];
+            if (newBadges.length > 0) {
+              setBadgesToCelebrate((prev) => [...prev, ...newBadges]);
+            }
+          }
+        }
+        window.localStorage.setItem(badgeStorageKey, badgesCount.toString());
+      }
     } catch (err) {
       console.error("LevelUp check error:", err);
     }
@@ -80,6 +109,17 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
         levelNumber={levelUpData.levelNumber}
         levelName={levelUpData.levelName}
       />
+      {badgesToCelebrate.map((badge, index) => (
+        <BadgeModal
+          key={badge.badges_id + index}
+          isOpen={true}
+          onClose={() => {
+            setBadgesToCelebrate((prev) => prev.filter((b) => b !== badge));
+          }}
+          badgeName={badge.nama_badge}
+          badgeDesc={badge.deskripsi}
+        />
+      ))}
     </LevelUpContext.Provider>
   );
 }
