@@ -18,6 +18,10 @@ router.post("/claim", authMiddleware, dailyChallengeController.claimPoints);
 // List ALL challenges (including inactive)
 router.get("/admin/all", authMiddleware, adminMiddleware, dailyChallengeController.getAllChallenges);
 
+// Global Bonus Settings
+router.get("/admin/bonus", authMiddleware, adminMiddleware, dailyChallengeController.getBonusSetting);
+router.put("/admin/bonus", authMiddleware, adminMiddleware, dailyChallengeController.updateBonusSetting);
+
 // View today's assigned challenges
 router.get("/admin/today", authMiddleware, adminMiddleware, dailyChallengeController.getTodayAdmin);
 

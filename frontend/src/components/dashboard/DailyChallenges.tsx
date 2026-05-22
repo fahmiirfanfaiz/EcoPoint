@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { getStoredAuth, updateStoredPoints } from "@/lib/auth";
 import { Recycle, Share2, Trophy, Star, Eye } from "lucide-react";
+import confetti from "canvas-confetti";
 
 interface TodayChallengeData {
   challenge_of_the_day_id: string;
@@ -62,6 +63,7 @@ const DailyChallenges: React.FC<DailyChallengesProps> = ({ isOpen, onClose }) =>
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [claimingId, setClaimingId] = useState<string | null>(null);
+  const [globalBonusPoints, setGlobalBonusPoints] = useState(0);
 
   const fetchChallenges = useCallback(async () => {
     setLoading(true);
@@ -77,6 +79,7 @@ const DailyChallenges: React.FC<DailyChallengesProps> = ({ isOpen, onClose }) =>
       if (!res.ok) throw new Error("Gagal memuat challenges");
       const data = await res.json();
       setChallenges(data.challenges ?? []);
+      setGlobalBonusPoints(data.global_bonus_points ?? 0);
     } catch (e: any) {
       setError(e.message || "Terjadi kesalahan");
     } finally {
@@ -97,11 +100,23 @@ const DailyChallenges: React.FC<DailyChallengesProps> = ({ isOpen, onClose }) =>
       if (res.ok) {
         const result = await res.json();
         const newTotal = result.data.total_poin;
+        const bonusAwarded = result.data.bonus_awarded;
+        const bonusAmount = result.data.bonus_didapat;
         
         await fetchChallenges(); // refresh
         
         // Update local storage and trigger global event
         updateStoredPoints(newTotal);
+
+        if (bonusAwarded) {
+          confetti({
+            particleCount: 150,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#10B981', '#34D399', '#059669', '#FCD34D'],
+            zIndex: 9999
+          });
+        }
       }
     } catch (e) {
       console.error("Claim error:", e);
@@ -205,6 +220,19 @@ const DailyChallenges: React.FC<DailyChallengesProps> = ({ isOpen, onClose }) =>
 
         {/* Challenge List */}
         <div className="flex flex-col gap-4 p-6">
+          {globalBonusPoints > 0 && challenges.length > 0 && (
+            <div className="flex items-center gap-3 rounded-2xl bg-amber-50 p-4 outline outline-1 outline-amber-200 shadow-sm">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-500">
+                <Star size={22} className={challenges.every(c => c.user_progress?.is_completed && c.user_progress?.is_points_claimed) ? "fill-amber-500" : ""} />
+              </div>
+              <p className="font-quicksand text-sm font-semibold text-amber-800 leading-snug">
+                {challenges.every(c => c.user_progress?.is_completed && c.user_progress?.is_points_claimed) 
+                  ? "Luar Biasa! Semua challenge selesai dan bonus harian berhasil diklaim!" 
+                  : <>Selesaikan semua challenge hari ini untuk dapat <span className="font-extrabold text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-md">BONUS +{globalBonusPoints} Pts</span>!</>}
+              </p>
+            </div>
+          )}
+
           {loading ? (
             <div className="flex flex-col items-center gap-3 py-8">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600"></div>
