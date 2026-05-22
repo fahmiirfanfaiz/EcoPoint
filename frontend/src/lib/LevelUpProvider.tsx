@@ -41,42 +41,49 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
 
       const currentLvl = data.level?.current;
       const badgesCount = data.stats?.badges_earned;
-      const recentBadge = data.recent_achievements?.[0];
+      const lastSeenLevel = data.user?.last_seen_level ?? 0;
+      const lastSeenBadgeCount = data.user?.last_seen_badge_count ?? 0;
 
-      if (currentLvl) {
-        const storageKey = `ecopoint_last_level_${auth.user.user_id}`;
-        const storedLvl = window.localStorage.getItem(storageKey);
+      let triggerUpdate = false;
+      const updatePayload: any = {};
 
-        if (storedLvl !== null) {
-          const lastSeen = parseInt(storedLvl, 10);
-          if (currentLvl.level_number > lastSeen) {
-            // Level up detected!
-            setLevelUpData({
-              isOpen: true,
-              levelNumber: currentLvl.level_number,
-              levelName: currentLvl.nama_level,
-            });
-          }
-        }
-        window.localStorage.setItem(storageKey, currentLvl.level_number.toString());
+      if (currentLvl && currentLvl.level_number > lastSeenLevel) {
+        // Level up detected!
+        setLevelUpData({
+          isOpen: true,
+          levelNumber: currentLvl.level_number,
+          levelName: currentLvl.nama_level,
+        });
+        triggerUpdate = true;
+        updatePayload.seen_level = currentLvl.level_number;
       }
 
       if (badgesCount !== undefined) {
-        const badgeStorageKey = `ecopoint_last_badge_count_${auth.user.user_id}`;
-        const storedVal = window.localStorage.getItem(badgeStorageKey);
-        
-        if (storedVal !== null) {
-          const lastBadgeCount = parseInt(storedVal, 10);
-          const diff = badgesCount - lastBadgeCount;
-          if (diff > 0) {
-            // New badge(s) earned!
-            const newBadges = data.recent_achievements?.slice(0, diff) || [];
-            if (newBadges.length > 0) {
-              setBadgesToCelebrate((prev) => [...prev, ...newBadges]);
-            }
+        const diff = badgesCount - lastSeenBadgeCount;
+        if (diff > 0) {
+          // New badge(s) earned!
+          const newBadges = data.recent_achievements?.slice(0, diff) || [];
+          if (newBadges.length > 0) {
+            setBadgesToCelebrate((prev) => [...prev, ...newBadges]);
           }
+          triggerUpdate = true;
+          updatePayload.seen_badge_count = badgesCount;
         }
-        window.localStorage.setItem(badgeStorageKey, badgesCount.toString());
+      }
+
+      if (triggerUpdate) {
+        try {
+          await fetch(`${API_BASE_URL}/dashboard/seen`, {
+            method: "POST",
+            headers: { 
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${auth.token}` 
+            },
+            body: JSON.stringify(updatePayload),
+          });
+        } catch (e) {
+          console.error("Failed to update seen achievements", e);
+        }
       }
     } catch (err) {
       console.error("LevelUp check error:", err);
