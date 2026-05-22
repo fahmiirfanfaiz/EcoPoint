@@ -31,6 +31,8 @@ export const getDashboard = async (
             is_edited: true,
             total_poin: true,
             created_at: true,
+            last_seen_level: true,
+            last_seen_badge_count: true,
           },
         }),
 
@@ -151,6 +153,8 @@ export const getDashboard = async (
         profile_pic: Number(user.profile_pic),
         is_edited: user.is_edited,
         total_poin: Number(user.total_poin),
+        last_seen_level: user.last_seen_level,
+        last_seen_badge_count: user.last_seen_badge_count,
       },
       stats: {
         total_poin: Number(user.total_poin),
@@ -180,6 +184,33 @@ export const getDashboard = async (
 };
 
 /**
+ * POST /api/dashboard/seen
+ * Updates the last seen level and badge count for the user.
+ */
+export const updateSeenAchievements = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = req.userId!;
+    const { seen_level, seen_badge_count } = req.body;
+
+    await prisma.users.update({
+      where: { user_id: userId },
+      data: {
+        ...(seen_level !== undefined && { last_seen_level: Number(seen_level) }),
+        ...(seen_badge_count !== undefined && { last_seen_badge_count: Number(seen_badge_count) }),
+      },
+    });
+
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("updateSeenAchievements error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
  * Returns the start of the current week (Monday 00:00:00).
  */
 function getStartOfWeek(): Date {
@@ -192,4 +223,4 @@ function getStartOfWeek(): Date {
   return monday;
 }
 
-export default { getDashboard };
+export default { getDashboard, updateSeenAchievements };
