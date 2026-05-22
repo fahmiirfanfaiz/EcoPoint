@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Settings, Plus, Zap, Star } from "lucide-react";
 import { AuthUser, getStoredAuth, API_BASE_URL } from "@/lib/auth";
 import EditProfileModal, { getAvatarUrl } from "./EditProfileModal";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface LevelInfo {
   current: { level_number: number; nama_level: string; syarat_poin: number } | null;
@@ -20,6 +21,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onOpenChallenges }) => {
   const [user, setUser] = React.useState<AuthUser | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [levelInfo, setLevelInfo] = React.useState<LevelInfo | null>(null);
+  const [loading, setLoading] = React.useState(true);
 
   const syncData = React.useCallback(() => {
     const auth = getStoredAuth();
@@ -56,7 +58,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onOpenChallenges }) => {
 
   React.useEffect(() => {
     syncData();
-    fetchLevel();
+    fetchLevel().finally(() => setLoading(false));
     window.addEventListener("ecopoint-auth-changed", syncData);
     return () => window.removeEventListener("ecopoint-auth-changed", syncData);
   }, [syncData, fetchLevel]);
@@ -85,6 +87,35 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onOpenChallenges }) => {
     ? `Lvl ${currentLevel.level_number}`
     : "Lvl 1";
   const levelName = currentLevel?.nama_level ?? "Newcomer";
+
+  if (loading) {
+    return (
+      <div
+        className="relative overflow-hidden rounded-[32px] bg-white p-8"
+        style={{
+          boxShadow: "0px 2px 4px -1px rgba(0,0,0,0.03), 0px 4px 6px -1px rgba(0,0,0,0.05)",
+        }}
+      >
+        <div className="relative z-10 flex flex-col items-center gap-8 md:flex-row md:items-start">
+          <Skeleton className="h-[128px] w-[128px] rounded-full flex-shrink-0" />
+          <div className="flex flex-1 flex-col gap-2 w-full text-center md:text-left mt-4 md:mt-0">
+            <Skeleton className="h-8 w-64 mx-auto md:mx-0" />
+            <div className="flex flex-wrap justify-center gap-4 pb-2 md:justify-start mt-2">
+              <Skeleton className="h-6 w-32 rounded-lg" />
+              <Skeleton className="h-6 w-40 rounded-lg" />
+            </div>
+            <Skeleton className="h-4 w-32 mt-2 mx-auto md:mx-0" />
+            <Skeleton className="h-3 w-full rounded-full mt-1" />
+            <Skeleton className="h-3 w-48 mt-2 mx-auto md:mx-0" />
+          </div>
+          <div className="flex min-w-[200px] flex-col gap-3">
+            <Skeleton className="h-[48px] w-full rounded-3xl" />
+            <Skeleton className="h-[48px] w-full rounded-3xl" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

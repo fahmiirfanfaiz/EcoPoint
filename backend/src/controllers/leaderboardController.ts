@@ -1,5 +1,5 @@
-import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
+import { cache } from "../lib/cache.js";
 
 /**
  * GET /api/leaderboard
@@ -15,6 +15,14 @@ export const getLeaderboard = async (
   try {
     const limit = Math.min(Number(req.query.limit) || 10, 50);
     const period = req.query.period === "mingguan" ? "mingguan" : "sepanjang-waktu";
+
+    const cacheKey = `leaderboard_${period}_${limit}`;
+    const cachedData = cache.get(cacheKey);
+
+    if (cachedData) {
+      res.status(200).json({ leaderboard: cachedData });
+      return;
+    }
 
     const users = await prisma.users.findMany({
       where: {
@@ -126,6 +134,9 @@ export const getLeaderboard = async (
       badges_count: user.badges_count,
       reports_count: user.reports_count,
     }));
+
+    // Cache for 5 minutes (300 seconds)
+    cache.set(cacheKey, leaderboard, 300);
 
     res.status(200).json({ leaderboard });
   } catch (error) {
