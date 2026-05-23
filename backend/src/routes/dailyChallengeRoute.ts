@@ -11,6 +11,9 @@ router.get("/today", authMiddleware, dailyChallengeController.getTodayChallenge)
 // Update progress on today's challenge
 router.post("/progress", authMiddleware, dailyChallengeController.updateProgress);
 
+// Track an action to automatically increment daily challenge progress
+router.post("/track-action", authMiddleware, dailyChallengeController.trackAction);
+
 // Claim points for completed challenge
 router.post("/claim", authMiddleware, dailyChallengeController.claimPoints);
 

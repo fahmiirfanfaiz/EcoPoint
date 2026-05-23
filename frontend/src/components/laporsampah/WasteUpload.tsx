@@ -115,62 +115,67 @@ const UploadCard = ({
       onDragLeave={onDragLeave}
       className={`
         relative flex flex-col items-center justify-center gap-3 rounded-2xl
-        transition-all duration-200 select-none p-4
-        ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
-        ${isDragging ? "bg-white border-2 border-emerald-400 border-dashed" : "bg-gray-50 border-2 border-transparent"}
-        min-h-56
+        transition-all duration-300 select-none overflow-hidden
+        ${disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:shadow-md"}
+        ${isDragging ? "ring-2 ring-emerald-400 ring-offset-2 bg-emerald-50" : "bg-gray-50/80 border border-gray-200/60"}
+        ${imageUrl ? "p-2" : "p-6"}
+        min-h-[200px]
       `}
-      style={{
-        background: isDragging
-          ? undefined
-          : "linear-gradient(135deg, #ffffff 0%, #ffffff 100%)",
-      }}
     >
-      <p className="text-sm font-bold text-gray-700">
-        {stepNumber}. {label}
-      </p>
+      {/* Step Number Badge */}
+      <div className="absolute top-3 left-3 z-10">
+        <span className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold shadow-sm ${
+          imageUrl ? "bg-white/90 text-gray-700 backdrop-blur-sm" : "bg-emerald-100 text-emerald-700"
+        }`}>
+          {stepNumber}. {label}
+        </span>
+      </div>
+
       {imageUrl ? (
-        <Image
-          src={imageUrl}
-          alt={label}
-          width={400}
-          height={240}
-          unoptimized
-          className="max-h-40 max-w-full rounded-xl object-cover"
-          style={{ width: "auto", height: "auto" }}
-        />
+        <div className="w-full relative group">
+          <Image
+            src={imageUrl}
+            alt={label}
+            width={400}
+            height={240}
+            unoptimized
+            className="w-full h-48 rounded-xl object-cover"
+          />
+          {/* Hover overlay */}
+          <div className="absolute inset-0 rounded-xl bg-black/0 group-hover:bg-black/30 transition-all duration-200 flex items-center justify-center">
+            <span className="text-white text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              Ganti Foto
+            </span>
+          </div>
+        </div>
       ) : (
         <>
           <div
-            className="w-20 h-20 rounded-full flex items-center justify-center"
-            style={{ background: "rgba(186,230,253,0.5)" }}
+            className="w-16 h-16 rounded-2xl flex items-center justify-center"
+            style={{
+              background: isDragging
+                ? "linear-gradient(135deg, #d1fae5, #a7f3d0)"
+                : "linear-gradient(135deg, #ecfdf5, #d1fae5)",
+            }}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="w-10 h-10"
+              className="w-8 h-8"
               fill="none"
               viewBox="0 0 24 24"
+              stroke={isDragging ? "#059669" : "#10b981"}
+              strokeWidth={1.5}
             >
-              <circle cx="7" cy="7" r="4" fill="#38bdf8" opacity="0.3" />
-              <text x="5" y="10" fontSize="7" fill="#0ea5e9" fontWeight="bold">
-                +
-              </text>
-              <rect x="3" y="9" width="18" height="12" rx="3" fill="#38bdf8" />
-              <circle cx="12" cy="15" r="3.5" fill="white" />
-              <circle cx="12" cy="15" r="2" fill="#38bdf8" />
-              <path
-                d="M8 9V7.5A1.5 1.5 0 0 1 9.5 6h1A1.5 1.5 0 0 1 12 7.5V9"
-                fill="#0ea5e9"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
             </svg>
           </div>
 
-          <div className="text-center px-4">
-            <p className="font-bold text-gray-800 text-base">
-              Ambil Foto atau Upload
+          <div className="text-center px-4 mt-1">
+            <p className="font-bold text-gray-700 text-sm">
+              {isDragging ? "Lepaskan di sini" : "Klik atau Drag & Drop"}
             </p>
-            <p className="text-gray-500 text-sm mt-1 leading-snug">
-              Drag &amp; drop foto sampahmu di sini. Format: JPG, PNG.
+            <p className="text-gray-400 text-xs mt-1 leading-snug">
+              Format: JPG, PNG, WebP
             </p>
           </div>
         </>
@@ -425,57 +430,47 @@ export default function WasteDetectionSection() {
   /* ── Success screen ── */
   if (submitSuccess) {
     return (
-      <div className="min-h-[50vh] flex items-center justify-center p-4 font-sans">
-        <div
-          className="w-full max-w-lg text-center"
-          style={{ fontFamily: "'Nunito', 'Segoe UI', sans-serif" }}
-        >
-          <div className="rounded-3xl bg-white shadow-lg shadow-emerald-100/50 p-10">
-            <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100">
-              <svg viewBox="0 0 24 24" fill="none" className="w-10 h-10">
-                <circle cx="12" cy="12" r="10" fill="#22c55e" />
-                <path
-                  d="M7.5 12.5l3 3 6-6"
-                  stroke="white"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-extrabold text-gray-800 mb-2">
-              Laporan Terkirim!
-            </h2>
-            <p className="text-gray-500 mb-6">
-              Laporan kamu sedang menunggu validasi admin. Poin akan ditambahkan setelah laporan diapprove.
-            </p>
-            <button
-              onClick={resetAll}
-              className="inline-flex items-center gap-2 rounded-xl px-6 py-3 font-bold text-white transition-all duration-200 hover:opacity-90 active:scale-95"
-              style={{
-                background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
-                boxShadow: "0 4px 14px rgba(34,197,94,0.35)",
-              }}
-            >
-              Kirim Laporan Baru
-            </button>
+      <div className="w-full max-w-5xl mx-auto" style={{ fontFamily: "'Nunito', 'Segoe UI', sans-serif" }}>
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-10 text-center">
+          <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100">
+            <svg viewBox="0 0 24 24" fill="none" className="w-10 h-10">
+              <circle cx="12" cy="12" r="10" fill="#22c55e" />
+              <path
+                d="M7.5 12.5l3 3 6-6"
+                stroke="white"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </div>
+          <h2 className="text-2xl font-extrabold text-gray-800 mb-2">
+            Laporan Terkirim!
+          </h2>
+          <p className="text-gray-500 mb-6 max-w-md mx-auto">
+            Laporan kamu sedang menunggu validasi admin. Poin akan ditambahkan setelah laporan disetujui.
+          </p>
+          <button
+            onClick={resetAll}
+            className="inline-flex items-center gap-2 rounded-2xl px-6 py-3 font-bold text-white transition-all duration-200 hover:opacity-90 active:scale-95"
+            style={{
+              background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
+              boxShadow: "0 4px 14px rgba(34,197,94,0.35)",
+            }}
+          >
+            Kirim Laporan Baru
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-[50vh] flex items-center justify-center p-4 font-sans">
-      <div
-        className="w-full max-w-5xl"
-        style={{ fontFamily: "'Nunito', 'Segoe UI', sans-serif" }}
-      >
-        <div className="p-1">
-          <div className="rounded-2xl">
-            <div className="flex flex-col lg:flex-row">
-              {/* ── LEFT COLUMN: Upload & Results ── */}
-              <div className="flex-1 p-6 flex flex-col gap-4">
+    <div className="w-full max-w-5xl mx-auto" style={{ fontFamily: "'Nunito', 'Segoe UI', sans-serif" }}>
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="flex flex-col lg:flex-row">
+          {/* ── LEFT COLUMN: Upload & Results ── */}
+          <div className="flex-1 p-6 flex flex-col gap-4">
                 {/* Before Image */}
                 <UploadCard
                   label="Upload foto sampah"
@@ -601,8 +596,11 @@ export default function WasteDetectionSection() {
                 )}
               </div>
 
+              {/* ── Divider ── */}
+              <div className="hidden lg:block w-px bg-gray-100" />
+
               {/* ── RIGHT COLUMN: Category Selection ── */}
-              <div className="flex-1 p-6 flex flex-col gap-4">
+              <div className="flex-1 p-6 flex flex-col gap-4 border-t lg:border-t-0 border-gray-100">
                 <div>
                   <h2 className="text-lg font-extrabold text-gray-800">
                     Konfirmasi Kategori
@@ -727,7 +725,5 @@ export default function WasteDetectionSection() {
             </div>
           </div>
         </div>
-      </div>
-    </div>
   );
 }

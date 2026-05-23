@@ -403,7 +403,7 @@ export const getTodayChallenge = async (
     const bonusSetting = await prisma.global_settings.findUnique({
       where: { setting_key: "DAILY_CHALLENGE_BONUS" }
     });
-    const globalBonusPoints = bonusSetting ? Number(bonusSetting.setting_value) : 0;
+    const globalBonusPoints = bonusSetting ? Number(bonusSetting.setting_value) : 300;
 
     res.status(200).json({ challenges: challengesWithProgress, global_bonus_points: globalBonusPoints });
   } catch (error) {
@@ -584,7 +584,7 @@ export const claimPoints = async (
 
       const allCompleted = todayChallengesAll.every((tc: any) => {
         const p = allProgress.find((up: any) => up.challenge_of_the_day_id === tc.id);
-        return p?.is_completed;
+        return p?.is_points_claimed;
       });
 
       const hasClaimedBonusToday = user?.last_daily_bonus_claim && user.last_daily_bonus_claim.getTime() === today.getTime();
@@ -593,7 +593,7 @@ export const claimPoints = async (
         const bonusSetting = await tx.global_settings.findUnique({
           where: { setting_key: "DAILY_CHALLENGE_BONUS" }
         });
-        bonusAmount = bonusSetting ? Number(bonusSetting.setting_value) : 0;
+        bonusAmount = bonusSetting ? Number(bonusSetting.setting_value) : 300;
 
         if (bonusAmount > 0) {
           pointsToAdd += bonusAmount;
@@ -644,6 +644,104 @@ export const claimPoints = async (
   }
 };
 
+/**
+ * POST /api/daily-challenges/track-action
+ * Track an action (e.g. "waste_report", "login_streak") to increment daily challenge progress.
+ * Body: { action: string }
+ */
+export const trackAction = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = req.userId!;
+    const { action } = req.body;
+    const today = getTodayDate();
+
+    if (!action) {
+      res.status(400).json({ message: "Action wajib diisi" });
+      return;
+    }
+
+    // Since REPORT and waste_report are sometimes used interchangeably
+    const actionTypes = action === "waste_report" || action === "REPORT" ? ["waste_report", "REPORT"] : [action];
+
+    // Find all today's challenges matching the action type
+    const matchingChallenges = await prisma.challenge_of_the_day.findMany({
+      where: {
+        tanggal: today,
+        daily_challenges: {
+          challenge_type: { in: actionTypes }
+        }
+      },
+      include: { daily_challenges: true },
+    });
+
+    if (matchingChallenges.length === 0) {
+      // No matching challenge for today, do nothing but return ok
+      res.status(200).json({ message: "No matching challenge for today", progress_updated: false });
+      return;
+    }
+
+    let updatedCount = 0;
+
+    for (const tc of matchingChallenges) {
+      // Fetch or create progress
+      const existing = await prisma.user_daily_challenges.findUnique({
+        where: {
+          user_id_challenge_of_the_day_id: {
+            user_id: userId,
+            challenge_of_the_day_id: tc.id,
+          },
+        },
+      });
+
+      if (existing?.is_completed) continue;
+
+      const currentProgress = Number(existing?.current_progress ?? 0) + 1;
+      const targetCount = Number(tc.daily_challenges.target_count);
+      const isCompleted = currentProgress >= targetCount;
+
+      await prisma.user_daily_challenges.upsert({
+        where: {
+          user_id_challenge_of_the_day_id: {
+            user_id: userId,
+            challenge_of_the_day_id: tc.id,
+          },
+        },
+        create: {
+          user_id: userId,
+          challenge_of_the_day_id: tc.id,
+          current_progress: BigInt(currentProgress),
+          is_completed: isCompleted,
+        },
+        update: {
+          current_progress: BigInt(currentProgress),
+          is_completed: isCompleted,
+        },
+      });
+
+      updatedCount++;
+
+      // If just completed, we could trigger badge evaluation here, 
+      // but the user gets the badge upon claiming points or we can evaluate now.
+      if (isCompleted) {
+        import("../services/achievementService.js").then(({ evaluateUserAchievements }) => {
+          evaluateUserAchievements(userId).catch(console.error);
+        });
+      }
+    }
+
+    res.status(200).json({
+      message: `Progress updated for ${updatedCount} challenges`,
+      progress_updated: updatedCount > 0,
+    });
+  } catch (error) {
+    console.error("Track action error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 // ═══════════════════════════════════════════════════════════
 //  HELPER
 // ═══════════════════════════════════════════════════════════
@@ -670,4 +768,5 @@ export default {
   getTodayChallenge,
   updateProgress,
   claimPoints,
+  trackAction,
 };

@@ -176,6 +176,11 @@ export const approveReport = async (
       }),
     ]);
 
+    // Check for new achievements (badges) for the user
+    import("../services/achievementService.js").then(({ evaluateUserAchievements }) => {
+      evaluateUserAchievements(report.user_id).catch(console.error);
+    });
+
     res.status(200).json({
       success: true,
       message: `Laporan diapprove. +${pointsToAdd} poin ditambahkan ke user.`,
@@ -236,9 +241,44 @@ export const rejectReport = async (
   }
 };
 
+/**
+ * GET /api/admin/waste-reports/my-reports
+ * Get all reports for the currently logged-in user.
+ */
+export const getMyReports = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = req.userId!;
+
+    const reports = await prisma.waste_reports.findMany({
+      where: { user_id: userId },
+      orderBy: { created_at: "desc" },
+    });
+
+    const formatted = reports.map((r) => ({
+      report_id: Number(r.report_id),
+      user_id: r.user_id,
+      foto_url: r.foto_url,
+      kategori_user: r.kategori_user,
+      kategori_ai: r.kategori_ai,
+      status_validasi: r.status_validasi,
+      poin_didapat: Number(r.poin_didapat),
+      created_at: r.created_at,
+    }));
+
+    res.status(200).json({ reports: formatted });
+  } catch (error) {
+    console.error("getMyReports error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 export default {
   listWasteReports,
   getReportDetail,
   approveReport,
   rejectReport,
+  getMyReports,
 };
