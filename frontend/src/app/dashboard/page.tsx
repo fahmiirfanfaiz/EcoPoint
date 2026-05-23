@@ -479,7 +479,7 @@ export default function BerandaPage() {
               </span>
             </div>
             <div
-              className="flex items-end justify-between gap-2 px-2"
+              className="flex items-end justify-around gap-2 px-2"
               style={{ height: "160px" }}
             >
               {weeklyActivity.map((w) => {
@@ -494,7 +494,7 @@ export default function BerandaPage() {
                     className="flex flex-1 flex-col items-center gap-2"
                   >
                     <div
-                      className="relative w-full max-w-[40px]"
+                      className="relative w-full max-w-[48px] bg-slate-50 rounded-t-xl overflow-hidden"
                       style={{ height: "120px" }}
                     >
                       <div

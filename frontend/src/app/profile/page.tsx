@@ -86,17 +86,7 @@ export default function ProfilePage() {
   return (
     <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-6 px-6 py-8">
       {/* Profile Card */}
-      <ProfileCard onOpenChallenges={() => setShowChallenges(true)} />
-
-      {/* Member Since Badge */}
-      {memberSince && (
-        <div className="flex items-center gap-2 -mt-2">
-          <Calendar size={14} className="text-gray-400" />
-          <span className="font-outfit text-xs text-gray-400">
-            Bergabung sejak {memberSince}
-          </span>
-        </div>
-      )}
+      <ProfileCard onOpenChallenges={() => setShowChallenges(true)} memberSince={memberSince} />
 
       {/* Stats Cards - full width, live data */}
       <StatsCards

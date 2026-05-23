@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Settings, Plus, Zap, Star } from "lucide-react";
+import { Settings, Plus, Zap, Star, Calendar } from "lucide-react";
 import {
   AuthUser,
   getBearerToken,
@@ -28,9 +28,10 @@ interface LevelInfo {
 
 interface ProfileCardProps {
   onOpenChallenges?: () => void;
+  memberSince?: string | null;
 }
 
-const ProfileCard: React.FC<ProfileCardProps> = ({ onOpenChallenges }) => {
+const ProfileCard: React.FC<ProfileCardProps> = ({ onOpenChallenges, memberSince }) => {
   const [user, setUser] = React.useState<AuthUser | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [levelInfo, setLevelInfo] = React.useState<LevelInfo | null>(null);
@@ -152,7 +153,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onOpenChallenges }) => {
         {/* Avatar */}
         <div className="relative flex-shrink-0">
           <div
-            className="h-[128px] w-[128px] overflow-hidden rounded-full bg-emerald-100"
+            onClick={() => setIsEditModalOpen(true)}
+            className="h-[128px] w-[128px] overflow-hidden rounded-full bg-emerald-100 cursor-pointer transition-transform hover:scale-105"
             style={{
               boxShadow:
                 "0px 8px 10px -6px rgba(0,0,0,0.10), 0px 20px 25px -5px rgba(0,0,0,0.10)",
@@ -210,6 +212,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onOpenChallenges }) => {
             >
               {user?.fakultas || "Fakultas belum diset"}
             </span>
+            {memberSince && (
+              <span className="flex items-center gap-1.5 font-outfit rounded-lg px-3 py-1 text-sm leading-5 text-gray-500 bg-gray-50 border border-gray-100">
+                <Calendar size={14} className="text-gray-400" />
+                Bergabung sejak {memberSince}
+              </span>
+            )}
           </div>
 
           {/* Level progress */}
