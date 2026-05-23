@@ -1,17 +1,31 @@
 import React from "react";
 
-const barData = [
-  { day: "Mon", height: 45 },
-  { day: "Tue", height: 65 },
-  { day: "Wed", height: 35 },
-  { day: "Thu", height: 80 },
-  { day: "Fri", height: 55 },
-  { day: "Sat", height: 90 },
-  { day: "Sun", height: 40 },
-];
+interface WeeklyDay {
+  day: string;
+  count: number;
+}
 
-const WeeklyActivity: React.FC = () => {
+interface WeeklyActivityProps {
+  data?: WeeklyDay[];
+}
+
+const WeeklyActivity: React.FC<WeeklyActivityProps> = ({ data }) => {
+  const barData = data && data.length > 0
+    ? data
+    : [
+        { day: "Mon", count: 0 },
+        { day: "Tue", count: 0 },
+        { day: "Wed", count: 0 },
+        { day: "Thu", count: 0 },
+        { day: "Fri", count: 0 },
+        { day: "Sat", count: 0 },
+        { day: "Sun", count: 0 },
+      ];
+
+  const maxVal = Math.max(...barData.map((d) => d.count), 1);
+  const totalReports = barData.reduce((s, w) => s + w.count, 0);
   const maxH = 200;
+
   return (
     <div
       className="rounded-[32px] bg-white p-6"
@@ -31,28 +45,35 @@ const WeeklyActivity: React.FC = () => {
           <span className="font-quicksand text-lg font-bold leading-7 text-gray-800">Weekly Recycling Activity</span>
         </div>
         <div className="flex items-center gap-1 rounded-lg bg-emerald-50 px-3 py-1">
-          <span className="font-outfit text-xs leading-4 text-emerald-800">This Week</span>
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 5l3 3 3-3" stroke="#6B7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          <span className="font-outfit text-xs leading-4 text-emerald-800">{totalReports} laporan</span>
         </div>
       </div>
 
       <div className="flex items-end justify-between gap-2 px-2" style={{ height: `${maxH + 40}px` }}>
-        {barData.map((b) => (
-          <div key={b.day} className="flex flex-1 flex-col items-center gap-2">
-            <div className="relative w-full max-w-[40px]" style={{ height: `${maxH}px` }}>
-              <div
-                className="absolute bottom-0 w-full rounded-t-xl"
-                style={{
-                  height: `${(b.height / 100) * maxH}px`,
-                  background: b.height >= 80
-                    ? "linear-gradient(180deg, #10B981 0%, #34D399 100%)"
-                    : "linear-gradient(180deg, #6EE7B7 0%, #A7F3D0 100%)",
-                }}
-              />
+        {barData.map((b) => {
+          const barH = maxVal > 0 ? (b.count / maxVal) * maxH : 0;
+          return (
+            <div key={b.day} className="flex flex-1 flex-col items-center gap-2">
+              <div className="relative w-full max-w-[40px]" style={{ height: `${maxH}px` }}>
+                <div
+                  className="absolute bottom-0 w-full rounded-t-xl transition-all duration-500"
+                  style={{
+                    height: `${barH}px`,
+                    background: b.count >= maxVal * 0.8
+                      ? "linear-gradient(180deg, #10B981 0%, #34D399 100%)"
+                      : "linear-gradient(180deg, #6EE7B7 0%, #A7F3D0 100%)",
+                  }}
+                />
+                {b.count > 0 && (
+                  <span className="absolute -top-5 left-1/2 -translate-x-1/2 font-quicksand text-[10px] font-bold text-emerald-600">
+                    {b.count}
+                  </span>
+                )}
+              </div>
+              <span className="font-quicksand text-xs font-bold leading-4 text-gray-400">{b.day}</span>
             </div>
-            <span className="font-quicksand text-xs font-bold leading-4 text-gray-400">{b.day}</span>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
