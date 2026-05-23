@@ -92,7 +92,7 @@ export function clearStoredAuth() {
 
 export function updateStoredPoints(newPoints: number) {
   const auth = getStoredAuth();
-  if (auth) {
+  if (auth && auth.user.total_poin !== newPoints) {
     auth.user.total_poin = newPoints;
     saveAuth(auth);
   }
