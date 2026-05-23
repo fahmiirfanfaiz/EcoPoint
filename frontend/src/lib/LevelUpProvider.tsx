@@ -1,14 +1,22 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { getStoredAuth, API_BASE_URL } from "@/lib/auth";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
+import { getBearerToken, getStoredAuth, API_BASE_URL } from "@/lib/auth";
 import LevelUpModal from "@/components/shared/LevelUpModal";
 
 interface LevelUpContextType {
   checkLevelUp: () => void;
 }
 
-const LevelUpContext = createContext<LevelUpContextType>({ checkLevelUp: () => {} });
+const LevelUpContext = createContext<LevelUpContextType>({
+  checkLevelUp: () => {},
+});
 
 export function useLevelUp() {
   return useContext(LevelUpContext);
@@ -23,11 +31,12 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
 
   const checkLevelUp = useCallback(async () => {
     const auth = getStoredAuth();
-    if (!auth?.token || !auth.user?.user_id) return;
+    const bearer = getBearerToken();
+    if (!auth?.user?.user_id || !bearer) return;
 
     try {
       const res = await fetch(`${API_BASE_URL}/dashboard`, {
-        headers: { Authorization: `Bearer ${auth.token}` },
+        headers: { Authorization: bearer },
       });
       if (!res.ok) return;
       const data = await res.json();
@@ -36,7 +45,10 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
       if (!currentLvl) return;
 
       const storageKey = `ecopoint_last_level_${auth.user.user_id}`;
-      const lastSeen = parseInt(window.localStorage.getItem(storageKey) || "0", 10);
+      const lastSeen = parseInt(
+        window.localStorage.getItem(storageKey) || "0",
+        10,
+      );
 
       if (lastSeen > 0 && currentLvl.level_number > lastSeen) {
         // Level up detected!
@@ -48,7 +60,10 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Always update the stored level
-      window.localStorage.setItem(storageKey, currentLvl.level_number.toString());
+      window.localStorage.setItem(
+        storageKey,
+        currentLvl.level_number.toString(),
+      );
     } catch (err) {
       console.error("LevelUp check error:", err);
     }
@@ -62,7 +77,7 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
     };
 
     window.addEventListener("ecopoint-auth-changed", handleAuthChange);
-    
+
     // Initial check on mount
     checkLevelUp();
 

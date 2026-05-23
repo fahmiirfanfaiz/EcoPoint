@@ -1,5 +1,5 @@
 export type AuthUser = {
-  user_id: number;
+  user_id: string | number;
   nama: string;
   nim: string;
   email: string;
@@ -96,4 +96,22 @@ export function updateStoredPoints(newPoints: number) {
     auth.user.total_poin = newPoints;
     saveAuth(auth);
   }
+}
+
+export function normalizeStoredToken(token: string): string {
+  return token
+    .replace(/^Bearer\s+/i, "")
+    .replace(/^"+|"+$/g, "")
+    .trim();
+}
+
+export function getBearerToken(): string | null {
+  const auth = getStoredAuth();
+  const raw = auth?.token;
+  if (!raw) return null;
+
+  const normalized = normalizeStoredToken(raw);
+  if (!normalized) return null;
+
+  return `Bearer ${normalized}`;
 }

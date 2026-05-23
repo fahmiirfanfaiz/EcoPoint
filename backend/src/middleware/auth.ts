@@ -13,10 +13,26 @@ interface JwtPayload {
   role: string;
 }
 
+const normalizeBearerToken = (authHeader: string): string => {
+  const raw = authHeader.replace(/^Bearer\s+/i, "").trim();
+
+  // Handle accidental nested prefix: "Bearer Bearer <token>"
+  const withoutNestedPrefix = raw.replace(/^Bearer\s+/i, "").trim();
+
+  // Handle accidentally quoted token values.
+  const unquoted = withoutNestedPrefix.replace(/^"+|"+$/g, "").trim();
+
+  // Extract raw JWT payload if there are trailing/leading unexpected characters.
+  const jwtMatch = unquoted.match(
+    /[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+/,
+  );
+  return jwtMatch?.[0] ?? unquoted;
+};
+
 export const authMiddleware = (
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void => {
   try {
     const authHeader = req.headers.authorization;
@@ -26,10 +42,15 @@ export const authMiddleware = (
       return;
     }
 
-    const token = authHeader.split(" ")[1];
+    const token = normalizeBearerToken(authHeader);
+    if (!token) {
+      res.status(401).json({ message: "Token tidak ditemukan" });
+      return;
+    }
+
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET as string
+      process.env.JWT_SECRET as string,
     ) as JwtPayload;
 
     req.userId = decoded.userId;
@@ -49,11 +70,13 @@ export const authMiddleware = (
 export const adminMiddleware = (
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void => {
   const role = req.userRole?.replace(/'/g, "") ?? "";
   if (role !== "admin") {
-    res.status(403).json({ message: "Akses ditolak. Hanya admin yang diizinkan." });
+    res
+      .status(403)
+      .json({ message: "Akses ditolak. Hanya admin yang diizinkan." });
     return;
   }
   next();
