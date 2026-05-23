@@ -1,6 +1,5 @@
 "use client";
 import {
-  useEffect,
   useRef,
   useState,
   type ChangeEvent,
@@ -22,7 +21,6 @@ interface CategoryOption {
   label: string;
   description: string;
   emoji: string;
-  bgColor: string;
   iconBg: string;
 }
 
@@ -32,7 +30,6 @@ const categories: CategoryOption[] = [
     label: "Organik",
     description: "Sisa makanan, kulit buah, daun",
     emoji: "🍎",
-    bgColor: "bg-emerald-50",
     iconBg: "bg-emerald-100",
   },
   {
@@ -40,7 +37,6 @@ const categories: CategoryOption[] = [
     label: "Anorganik",
     description: "Plastik, kaleng, botol, kemasan",
     emoji: "♻️",
-    bgColor: "bg-sky-50",
     iconBg: "bg-sky-100",
   },
   {
@@ -48,7 +44,6 @@ const categories: CategoryOption[] = [
     label: "B3",
     description: "Baterai, obat, cairan kimia, lampu",
     emoji: "☣️",
-    bgColor: "bg-rose-50",
     iconBg: "bg-rose-100",
   },
   {
@@ -56,7 +51,6 @@ const categories: CategoryOption[] = [
     label: "Kertas",
     description: "Kardus, kertas tulis, koran",
     emoji: "📄",
-    bgColor: "bg-amber-50",
     iconBg: "bg-amber-100",
   },
   {
@@ -64,62 +58,66 @@ const categories: CategoryOption[] = [
     label: "Residu",
     description: "Sampah campuran yang sudah dibungkus",
     emoji: "🗑️",
-    bgColor: "bg-stone-50",
     iconBg: "bg-stone-100",
   },
 ];
 
-interface DetectionResult {
+interface ClassifyResult {
   category: Category;
   confidence: number;
   explanation: string;
-  imageUrl: string;
 }
 
-interface VerificationResult {
+interface VerifyResult {
   status: string;
   confidence: number;
   explanation: string;
-  rewardEligible: boolean;
+  reward_eligible: boolean;
+  before_description?: string;
+  after_description?: string;
 }
 
 const getAuthHeader = () => {
   const bearer = getBearerToken();
-
   if (!bearer) {
     throw new Error("Silakan login ulang untuk mengirim laporan.");
   }
-
   return bearer;
 };
 
-const DetectionCard = ({
+/* ─── Upload Card ─── */
+const UploadCard = ({
   label,
+  stepNumber,
   imageUrl,
   onClick,
   onDrop,
   onDragLeave,
   onDragOver,
   isDragging,
+  disabled,
 }: {
   label: string;
+  stepNumber: number;
   imageUrl: string | null;
   onClick: () => void;
   onDrop: (event: DragEvent<HTMLDivElement>) => void;
   onDragOver: (event: DragEvent<HTMLDivElement>) => void;
   onDragLeave: () => void;
   isDragging: boolean;
+  disabled?: boolean;
 }) => {
   return (
     <div
-      onClick={onClick}
-      onDrop={onDrop}
-      onDragOver={onDragOver}
+      onClick={disabled ? undefined : onClick}
+      onDrop={disabled ? undefined : onDrop}
+      onDragOver={disabled ? undefined : onDragOver}
       onDragLeave={onDragLeave}
       className={`
-        relative flex flex-col items-center justify-center gap-3 rounded-2xl cursor-pointer
+        relative flex flex-col items-center justify-center gap-3 rounded-2xl
         transition-all duration-200 select-none p-4
-        ${isDragging ? "bg-white border-2 border-blue-400 border-dashed" : "bg-gray-50 border-2 border-transparent"}
+        ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+        ${isDragging ? "bg-white border-2 border-emerald-400 border-dashed" : "bg-gray-50 border-2 border-transparent"}
         min-h-56
       `}
       style={{
@@ -128,7 +126,9 @@ const DetectionCard = ({
           : "linear-gradient(135deg, #ffffff 0%, #ffffff 100%)",
       }}
     >
-      <p className="text-sm font-bold text-gray-700">{label}</p>
+      <p className="text-sm font-bold text-gray-700">
+        {stepNumber}. {label}
+      </p>
       {imageUrl ? (
         <Image
           src={imageUrl}
@@ -179,68 +179,83 @@ const DetectionCard = ({
   );
 };
 
+/* ─── Main Component ─── */
 export default function WasteDetectionSection() {
+  // Files (kept for submit)
+  const [beforeFile, setBeforeFile] = useState<File | null>(null);
+  const [afterFile, setAfterFile] = useState<File | null>(null);
+
+  // Preview URLs
   const [beforeImage, setBeforeImage] = useState<string | null>(null);
   const [afterImage, setAfterImage] = useState<string | null>(null);
+
+  // Drag states
   const [isDraggingBefore, setIsDraggingBefore] = useState(false);
   const [isDraggingAfter, setIsDraggingAfter] = useState(false);
+
+  // AI results
+  const [classifyResult, setClassifyResult] = useState<ClassifyResult | null>(null);
+  const [verifyResult, setVerifyResult] = useState<VerifyResult | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<Category>(null);
-  const [detectionResult, setDetectionResult] =
-    useState<DetectionResult | null>(null);
-  const [verificationResult, setVerificationResult] =
-    useState<VerificationResult | null>(null);
+
+  // Loading & error states
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
-  const [verificationError, setVerificationError] = useState<string | null>(
-    null,
-  );
-  const [reportId, setReportId] = useState<string | null>(null);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+
+  // Refs
   const beforeInputRef = useRef<HTMLInputElement>(null);
   const afterInputRef = useRef<HTMLInputElement>(null);
-  const beforePreviewUrlRef = useRef<string | null>(null);
-  const afterPreviewUrlRef = useRef<string | null>(null);
   const requestIdRef = useRef(0);
 
-  useEffect(() => {
-    return () => {
-      if (beforePreviewUrlRef.current) {
-        URL.revokeObjectURL(beforePreviewUrlRef.current);
-      }
-      if (afterPreviewUrlRef.current) {
-        URL.revokeObjectURL(afterPreviewUrlRef.current);
-      }
-    };
-  }, []);
-
-  const resetAfterState = () => {
+  /* ── Helpers ── */
+  const resetAll = () => {
+    setBeforeFile(null);
+    setAfterFile(null);
+    setBeforeImage(null);
     setAfterImage(null);
-    setVerificationResult(null);
+    setClassifyResult(null);
+    setVerifyResult(null);
+    setSelectedCategory(null);
+    setAnalysisError(null);
     setVerificationError(null);
-    setReportId(null);
-
-    if (afterPreviewUrlRef.current) {
-      URL.revokeObjectURL(afterPreviewUrlRef.current);
-      afterPreviewUrlRef.current = null;
-    }
+    setSubmitError(null);
+    setSubmitSuccess(false);
   };
 
+  const canSubmit =
+    classifyResult !== null &&
+    selectedCategory !== null &&
+    beforeFile !== null &&
+    afterFile !== null &&
+    !isAnalyzing &&
+    !isVerifying &&
+    !isSubmitting &&
+    !submitSuccess;
+
+  /* ── Handle Before Image ── */
   const handleBeforeFile = async (file: File) => {
     if (!file.type.startsWith("image/")) return;
 
-    if (beforePreviewUrlRef.current) {
-      URL.revokeObjectURL(beforePreviewUrlRef.current);
-    }
-
     const url = URL.createObjectURL(file);
-    beforePreviewUrlRef.current = url;
+    setBeforeFile(file);
     setBeforeImage(url);
-    setDetectionResult(null);
+    setClassifyResult(null);
     setSelectedCategory(null);
     setAnalysisError(null);
-    setIsAnalyzing(true);
-    resetAfterState();
+    setSubmitError(null);
+    setSubmitSuccess(false);
+    // Reset after state when before changes
+    setAfterFile(null);
+    setAfterImage(null);
+    setVerifyResult(null);
+    setVerificationError(null);
 
+    setIsAnalyzing(true);
     const currentRequestId = ++requestIdRef.current;
 
     try {
@@ -249,44 +264,26 @@ export default function WasteDetectionSection() {
 
       const response = await fetch("/api/lapor-sampah/classify", {
         method: "POST",
-        headers: {
-          Authorization: getAuthHeader(),
-        },
         body: formData,
       });
 
       const payload = (await response.json().catch(() => null)) as {
         ok?: boolean;
-        report_id?: string;
-        result?: {
-          category: Category;
-          confidence: number;
-          explanation: string;
-        };
+        result?: ClassifyResult;
         message?: string;
         detail?: string;
       } | null;
 
       if (currentRequestId !== requestIdRef.current) return;
 
-      if (!response.ok || !payload?.result || !payload.report_id) {
+      if (!response.ok || !payload?.result) {
         throw new Error(
-          payload?.message ??
-            payload?.detail ??
-            "Gagal mengklasifikasikan gambar",
+          payload?.message ?? payload?.detail ?? "Gagal mengklasifikasikan gambar",
         );
       }
 
-      const normalizedResult: DetectionResult = {
-        category: payload.result.category,
-        confidence: payload.result.confidence,
-        explanation: payload.result.explanation,
-        imageUrl: url,
-      };
-
-      setDetectionResult(normalizedResult);
-      setSelectedCategory(normalizedResult.category);
-      setReportId(payload.report_id);
+      setClassifyResult(payload.result);
+      setSelectedCategory(payload.result.category);
     } catch (error) {
       if (currentRequestId !== requestIdRef.current) return;
       setAnalysisError(
@@ -301,65 +298,42 @@ export default function WasteDetectionSection() {
     }
   };
 
+  /* ── Handle After Image ── */
   const handleAfterFile = async (file: File) => {
     if (!file.type.startsWith("image/")) return;
-    if (!reportId) {
-      setVerificationError(
-        "Lakukan klasifikasi gambar before terlebih dahulu.",
-      );
-      return;
-    }
-
-    if (afterPreviewUrlRef.current) {
-      URL.revokeObjectURL(afterPreviewUrlRef.current);
-    }
+    if (!beforeFile) return;
 
     const url = URL.createObjectURL(file);
-    afterPreviewUrlRef.current = url;
+    setAfterFile(file);
     setAfterImage(url);
-    setVerificationResult(null);
+    setVerifyResult(null);
     setVerificationError(null);
     setIsVerifying(true);
 
     try {
       const formData = new FormData();
-      formData.append("report_id", reportId);
+      formData.append("before_image", beforeFile);
       formData.append("after_image", file);
 
       const response = await fetch("/api/lapor-sampah/verify-cleanup", {
         method: "POST",
-        headers: {
-          Authorization: getAuthHeader(),
-        },
         body: formData,
       });
 
       const payload = (await response.json().catch(() => null)) as {
         ok?: boolean;
-        result?: {
-          status?: string;
-          confidence?: number;
-          explanation?: string;
-          reward_eligible?: boolean;
-        };
+        result?: VerifyResult;
         message?: string;
         detail?: string;
       } | null;
 
       if (!response.ok || !payload?.result) {
         throw new Error(
-          payload?.message ??
-            payload?.detail ??
-            "Gagal memverifikasi kebersihan",
+          payload?.message ?? payload?.detail ?? "Gagal memverifikasi kebersihan",
         );
       }
 
-      setVerificationResult({
-        status: payload.result.status ?? "unknown",
-        confidence: payload.result.confidence ?? 0,
-        explanation: payload.result.explanation ?? "",
-        rewardEligible: Boolean(payload.result.reward_eligible),
-      });
+      setVerifyResult(payload.result);
     } catch (error) {
       setVerificationError(
         error instanceof Error
@@ -371,6 +345,59 @@ export default function WasteDetectionSection() {
     }
   };
 
+  /* ── Submit Report ── */
+  const handleSubmit = async () => {
+    if (!canSubmit || !beforeFile || !afterFile || !selectedCategory) return;
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("before_image", beforeFile);
+      formData.append("after_image", afterFile);
+      formData.append("kategori_user", selectedCategory);
+      if (classifyResult?.category) {
+        formData.append("kategori_ai", classifyResult.category);
+      }
+      // Send AI analysis results for admin review
+      if (classifyResult) {
+        formData.append("classify_result", JSON.stringify(classifyResult));
+      }
+      if (verifyResult) {
+        formData.append("verify_result", JSON.stringify(verifyResult));
+      }
+
+      const response = await fetch("/api/lapor-sampah/submit", {
+        method: "POST",
+        headers: {
+          Authorization: getAuthHeader(),
+        },
+        body: formData,
+      });
+
+      const payload = (await response.json().catch(() => null)) as {
+        ok?: boolean;
+        message?: string;
+      } | null;
+
+      if (!response.ok || !payload?.ok) {
+        throw new Error(
+          payload?.message ?? "Gagal mengirim laporan",
+        );
+      }
+
+      setSubmitSuccess(true);
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error ? error.message : "Gagal mengirim laporan",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  /* ── Drag & drop ── */
   const handleBeforeDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     setIsDraggingBefore(false);
@@ -395,20 +422,64 @@ export default function WasteDetectionSection() {
     if (file) void handleAfterFile(file);
   };
 
+  /* ── Success screen ── */
+  if (submitSuccess) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center p-4 font-sans">
+        <div
+          className="w-full max-w-lg text-center"
+          style={{ fontFamily: "'Nunito', 'Segoe UI', sans-serif" }}
+        >
+          <div className="rounded-3xl bg-white shadow-lg shadow-emerald-100/50 p-10">
+            <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100">
+              <svg viewBox="0 0 24 24" fill="none" className="w-10 h-10">
+                <circle cx="12" cy="12" r="10" fill="#22c55e" />
+                <path
+                  d="M7.5 12.5l3 3 6-6"
+                  stroke="white"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-extrabold text-gray-800 mb-2">
+              Laporan Terkirim!
+            </h2>
+            <p className="text-gray-500 mb-6">
+              Laporan kamu sedang menunggu validasi admin. Poin akan ditambahkan setelah laporan diapprove.
+            </p>
+            <button
+              onClick={resetAll}
+              className="inline-flex items-center gap-2 rounded-xl px-6 py-3 font-bold text-white transition-all duration-200 hover:opacity-90 active:scale-95"
+              style={{
+                background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
+                boxShadow: "0 4px 14px rgba(34,197,94,0.35)",
+              }}
+            >
+              Kirim Laporan Baru
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-[50vh] flex items-center justify-center p-4 font-sans">
       <div
         className="w-full max-w-5xl"
-        style={{
-          fontFamily: "'Nunito', 'Segoe UI', sans-serif",
-        }}
+        style={{ fontFamily: "'Nunito', 'Segoe UI', sans-serif" }}
       >
         <div className="p-1">
           <div className="rounded-2xl">
             <div className="flex flex-col lg:flex-row">
+              {/* ── LEFT COLUMN: Upload & Results ── */}
               <div className="flex-1 p-6 flex flex-col gap-4">
-                <DetectionCard
-                  label="1. Upload foto sampah sebelum dibersihkan"
+                {/* Before Image */}
+                <UploadCard
+                  label="Upload foto sampah"
+                  stepNumber={1}
                   imageUrl={beforeImage}
                   onClick={() => beforeInputRef.current?.click()}
                   onDrop={handleBeforeDrop}
@@ -427,10 +498,38 @@ export default function WasteDetectionSection() {
                   onChange={handleBeforeInput}
                 />
 
-                {reportId && (
+                {/* Classify status messages */}
+                {isAnalyzing && (
+                  <div className="rounded-2xl border border-sky-100 bg-sky-50 p-3 text-sm text-sky-700 flex items-center gap-2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-300 border-t-sky-600" />
+                    AI sedang mengklasifikasikan gambar...
+                  </div>
+                )}
+                {analysisError && (
+                  <div className="rounded-2xl border border-rose-100 bg-rose-50 p-3 text-sm text-rose-700">
+                    {analysisError}
+                  </div>
+                )}
+                {classifyResult && (
+                  <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-3">
+                    <p className="text-sm font-semibold text-emerald-700">
+                      Hasil klasifikasi AI: {classifyResult.category}
+                    </p>
+                    <p className="text-xs text-emerald-600 mt-1">
+                      Confidence: {Math.round(classifyResult.confidence * 100)}%
+                    </p>
+                    <p className="text-xs text-emerald-700 mt-1">
+                      {classifyResult.explanation}
+                    </p>
+                  </div>
+                )}
+
+                {/* After Image — shown once classify is done */}
+                {classifyResult && (
                   <>
-                    <DetectionCard
-                      label="2. Upload foto sesudah dibersihkan"
+                    <UploadCard
+                      label="Upload foto setelah dibersihkan"
+                      stepNumber={2}
                       imageUrl={afterImage}
                       onClick={() => afterInputRef.current?.click()}
                       onDrop={handleAfterDrop}
@@ -451,98 +550,83 @@ export default function WasteDetectionSection() {
                   </>
                 )}
 
-                {analysisError && (
-                  <div className="rounded-2xl border border-rose-100 bg-rose-50 p-3 text-sm text-rose-700">
-                    {analysisError}
+                {/* Verify status messages */}
+                {isVerifying && (
+                  <div className="rounded-2xl border border-amber-100 bg-amber-50 p-3 text-sm text-amber-700 flex items-center gap-2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-300 border-t-amber-600" />
+                    AI sedang memverifikasi kebersihan before vs after...
                   </div>
                 )}
-
-                {isAnalyzing && (
-                  <div className="rounded-2xl border border-sky-100 bg-sky-50 p-3 text-sm text-sky-700">
-                    AI sedang mengklasifikasikan gambar before.
-                  </div>
-                )}
-
-                {detectionResult && (
-                  <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-3">
-                    <p className="text-sm font-semibold text-emerald-700">
-                      Hasil klasifikasi: {detectionResult.category}
-                    </p>
-                    <p className="text-xs text-emerald-600 mt-1">
-                      Confidence: {Math.round(detectionResult.confidence * 100)}
-                      %
-                    </p>
-                    <p className="text-xs text-emerald-700 mt-1">
-                      {detectionResult.explanation}
-                    </p>
-                  </div>
-                )}
-
                 {verificationError && (
                   <div className="rounded-2xl border border-rose-100 bg-rose-50 p-3 text-sm text-rose-700">
                     {verificationError}
                   </div>
                 )}
-
-                {isVerifying && (
-                  <div className="rounded-2xl border border-amber-100 bg-amber-50 p-3 text-sm text-amber-700">
-                    AI sedang memverifikasi kebersihan before vs after.
-                  </div>
-                )}
-
-                {verificationResult && (
+                {verifyResult && (
                   <div
                     className={`rounded-2xl border p-4 ${
-                      verificationResult.rewardEligible
+                      verifyResult.reward_eligible
                         ? "border-emerald-200 bg-emerald-50"
                         : "border-gray-200 bg-gray-50"
                     }`}
                   >
                     <p className="text-sm font-bold text-gray-800">
-                      Status verifikasi: {verificationResult.status}
+                      Status verifikasi: {verifyResult.status}
                     </p>
                     <p className="text-xs text-gray-600 mt-1">
-                      Confidence:{" "}
-                      {Math.round(verificationResult.confidence * 100)}%
+                      Confidence: {Math.round(verifyResult.confidence * 100)}%
                     </p>
                     <p className="text-xs text-gray-700 mt-1">
-                      {verificationResult.explanation}
+                      {verifyResult.explanation}
                     </p>
                     <p
                       className={`mt-2 inline-flex rounded-full px-3 py-1 text-xs font-bold ${
-                        verificationResult.rewardEligible
+                        verifyResult.reward_eligible
                           ? "bg-emerald-100 text-emerald-700"
                           : "bg-gray-200 text-gray-700"
                       }`}
                     >
-                      {verificationResult.rewardEligible
-                        ? "Reward Eligible"
+                      {verifyResult.reward_eligible
+                        ? "Reward Eligible ✓"
                         : "Not Eligible"}
                     </p>
                   </div>
                 )}
+
+                {/* Submit error */}
+                {submitError && (
+                  <div className="rounded-2xl border border-rose-100 bg-rose-50 p-3 text-sm text-rose-700">
+                    {submitError}
+                  </div>
+                )}
               </div>
 
+              {/* ── RIGHT COLUMN: Category Selection ── */}
               <div className="flex-1 p-6 flex flex-col gap-4">
                 <div>
                   <h2 className="text-lg font-extrabold text-gray-800">
                     Konfirmasi Kategori
                   </h2>
                   <p className="text-sm text-gray-500 mt-0.5">
-                    Pilih kategori yang paling sesuai jika AI salah.
+                    {classifyResult
+                      ? "Kategori dipilih oleh AI. Koreksi jika salah."
+                      : "Upload foto sampah terlebih dahulu."}
                   </p>
                 </div>
 
                 <div className="flex flex-col gap-3">
                   {categories.map((cat) => {
                     const isSelected = selectedCategory === cat.id;
+                    const isDisabled = !classifyResult;
                     return (
                       <button
                         key={cat.id}
-                        onClick={() => setSelectedCategory(cat.id)}
+                        onClick={() => !isDisabled && setSelectedCategory(cat.id)}
+                        disabled={isDisabled}
                         className={`
                           w-full flex items-center gap-4 p-4 rounded-2xl text-left
                           transition-all duration-200 border-2
+                          ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}
                           ${
                             isSelected
                               ? "border-green-400 bg-green-50 shadow-sm"
@@ -582,6 +666,62 @@ export default function WasteDetectionSection() {
                       </button>
                     );
                   })}
+                </div>
+
+                {/* ── Submit Button (integrated) ── */}
+                <div className="mt-4">
+                  <button
+                    onClick={handleSubmit}
+                    disabled={!canSubmit}
+                    className={`
+                      w-full flex items-center justify-center gap-2 font-extrabold text-white rounded-xl
+                      transition-all duration-200
+                      ${canSubmit ? "hover:opacity-90 active:scale-95" : "opacity-50 cursor-not-allowed"}
+                    `}
+                    style={{
+                      background: canSubmit
+                        ? "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)"
+                        : "#9ca3af",
+                      boxShadow: canSubmit
+                        ? "0 4px 14px rgba(34,197,94,0.35)"
+                        : "none",
+                      padding: "14px 24px",
+                      fontSize: "15px",
+                      letterSpacing: "0.01em",
+                    }}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                        Mengirim...
+                      </>
+                    ) : (
+                      <>
+                        Kirim Laporan
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="w-4 h-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2.5}
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                        </svg>
+                      </>
+                    )}
+                  </button>
+
+                  {!classifyResult && !isAnalyzing && (
+                    <p className="text-xs text-gray-400 text-center mt-2">
+                      Upload foto sampah untuk mengaktifkan tombol kirim.
+                    </p>
+                  )}
+                  {classifyResult && !afterFile && (
+                    <p className="text-xs text-gray-400 text-center mt-2">
+                      Upload foto setelah dibersihkan untuk melanjutkan.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

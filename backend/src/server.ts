@@ -10,6 +10,7 @@ import badgeRoutes from "./routes/badgeRoute.js";
 import dailyChallengeRoutes from "./routes/dailyChallengeRoute.js";
 import levelRoutes from "./routes/levelRoute.js";
 import usersRoutes from "./routes/usersRoute.js";
+import wasteReportRoutes from "./routes/wasteReportRoute.js";
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -33,6 +34,7 @@ app.use("/api/badges", badgeRoutes);
 app.use("/api/daily-challenges", dailyChallengeRoutes);
 app.use("/api/levels", levelRoutes);
 app.use("/api/admin/users", usersRoutes);
+app.use("/api/admin/waste-reports", wasteReportRoutes);
 
 // ── Health check ───────────────────────────────────────────
 app.get("/api/health", (_req, res) => {
@@ -85,5 +87,9 @@ app.listen(port, () => {
   console.log(`   - POST   /api/levels/admin`);
   console.log(`   - PUT    /api/levels/admin/:id`);
   console.log(`   - DELETE /api/levels/admin/:id`);
+  console.log(`   - GET    /api/admin/waste-reports`);
+  console.log(`   - GET    /api/admin/waste-reports/:id`);
+  console.log(`   - POST   /api/admin/waste-reports/:id/approve`);
+  console.log(`   - POST   /api/admin/waste-reports/:id/reject`);
   console.log(`   - GET    /api/health`);
 });
