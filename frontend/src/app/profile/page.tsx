@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { getStoredAuth } from "@/lib/auth";
+import { getStoredAuth, updateStoredPoints } from "@/lib/auth";
 import { Skeleton } from "@/components/ui/skeleton";
 import ProfileCard from "@/components/dashboard/ProfileCard";
 import StatsCards from "@/components/dashboard/StatsCards";
@@ -38,6 +38,9 @@ export default function ProfilePage() {
       if (res.ok) {
         const d = await res.json();
         setData(d);
+        if (d?.stats?.total_poin !== undefined) {
+          updateStoredPoints(d.stats.total_poin);
+        }
       }
     } catch (e) {
       console.error("Profile fetch error:", e);
