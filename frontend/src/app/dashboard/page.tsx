@@ -337,8 +337,8 @@ export default function BerandaPage() {
         )}
       </div>
 
-      {/* ── Main Content Grid ──────────────────────── */}
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_360px]">
+      {/* ── Main Content Layout ────────────────────── */}
+      <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-[1fr_350px]">
         {/* Left Column */}
         <div className="flex flex-col gap-6">
           {/* Daily Challenges */}
@@ -456,7 +456,7 @@ export default function BerandaPage() {
 
           {/* Weekly Activity */}
           <div
-            className="rounded-[28px] bg-white p-6 shadow-sm"
+            className="rounded-[28px] bg-white p-6 shadow-sm flex flex-col flex-1"
             style={{ outline: "1px #ECFDF5 solid", outlineOffset: "-1px" }}
           >
             <div className="flex items-center justify-between mb-5">
@@ -479,8 +479,8 @@ export default function BerandaPage() {
               </span>
             </div>
             <div
-              className="flex items-end justify-around gap-2 px-2"
-              style={{ height: "160px" }}
+              className="flex flex-1 items-end justify-around gap-2 px-2"
+              style={{ minHeight: "160px" }}
             >
               {weeklyActivity.map((w) => {
                 const maxVal = Math.max(
