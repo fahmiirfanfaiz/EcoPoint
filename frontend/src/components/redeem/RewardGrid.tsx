@@ -1,5 +1,6 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Dummy available points — ganti kalau mau ubah minimumnya
 const USER_AVAILABLE_POINTS = 650;
@@ -363,6 +364,13 @@ export default function RewardsGrid() {
   const [sort, setSort]         = useState<SortOption>("Recommended");
   const [sortOpen, setSortOpen] = useState(false);
   const [page, setPage]         = useState(1);
+  const [loading, setLoading]   = useState(true);
+
+  useEffect(() => {
+    // Simulate loading for demo purposes since data is static
+    const timer = setTimeout(() => setLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, [category, sort]);
 
   const filtered = useMemo(() => {
     let list = category === "All Rewards"
@@ -473,7 +481,28 @@ export default function RewardsGrid() {
       </div>
 
       {/* ── Grid ── */}
-      {filtered.length > 0 ? (
+      {loading ? (
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+          gridTemplateRows: "repeat(2, 388px)",
+          rowGap: 24,
+          columnGap: 24,
+          alignSelf: "stretch",
+        }}>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="flex flex-col rounded-[20px] overflow-hidden border border-slate-100 shadow-sm h-full">
+              <Skeleton className="h-[56%] w-full rounded-none" />
+              <div className="flex-1 flex flex-col p-[14px] gap-3">
+                <Skeleton className="h-4 w-24 rounded" />
+                <Skeleton className="h-5 w-full rounded" />
+                <Skeleton className="h-4 w-full rounded flex-1" />
+                <Skeleton className="h-10 w-full rounded-[24px] mt-2" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : filtered.length > 0 ? (
         <div style={{
           display: "grid",
           gridTemplateColumns: "repeat(4, minmax(0, 1fr))",

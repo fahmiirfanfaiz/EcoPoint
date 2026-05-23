@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { API_BASE_URL } from "@/lib/auth";
 import { getAvatarUrl } from "@/components/dashboard/EditProfileModal";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Period = "mingguan" | "sepanjang-waktu";
 
@@ -168,8 +169,43 @@ export default function LeaderboardKampus() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600"></div>
+          <div className="flex flex-col gap-8 w-full">
+            {/* Podium Skeleton */}
+            <div className="grid grid-cols-3 gap-3 items-end mt-4">
+              <div className="flex flex-col items-center gap-2">
+                <Skeleton className="h-16 w-16 rounded-full" />
+                <Skeleton className="h-28 w-full rounded-2xl" />
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <Skeleton className="h-20 w-20 rounded-full" />
+                <Skeleton className="h-32 w-full rounded-2xl" />
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <Skeleton className="h-16 w-16 rounded-full" />
+                <Skeleton className="h-28 w-full rounded-2xl" />
+              </div>
+            </div>
+            
+            {/* Table Skeleton */}
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+              <div className="grid grid-cols-[48px_1fr_1fr_90px] p-3 border-b border-slate-100">
+                <Skeleton className="h-4 w-8 rounded" />
+                <Skeleton className="h-4 w-20 rounded" />
+                <Skeleton className="h-4 w-20 rounded" />
+                <Skeleton className="h-4 w-12 rounded justify-self-end" />
+              </div>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="grid grid-cols-[48px_1fr_1fr_90px] p-4 items-center border-b border-slate-50 last:border-0">
+                  <Skeleton className="h-5 w-5 rounded" />
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <Skeleton className="h-5 w-32 rounded" />
+                  </div>
+                  <Skeleton className="h-5 w-24 rounded" />
+                  <Skeleton className="h-6 w-16 rounded justify-self-end" />
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           <>

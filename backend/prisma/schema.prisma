@@ -98,6 +98,9 @@ model users {
   fakultas              String                  @default("")
   profile_pic           BigInt                  @default(0)
   is_edited             Boolean                 @default(false)
+  last_seen_level       Int                     @default(0)
+  last_seen_badge_count Int                     @default(0)
+  last_daily_bonus_claim DateTime?              @db.Date
   notifications         notifications[]
   redemptions           redemptions[]
   user_badges           user_badges[]
@@ -152,4 +155,10 @@ model levels {
   nama_level   String
   syarat_poin  BigInt   @default(0)
   created_at   DateTime @default(now()) @db.Timestamp(6)
+}
+
+/// Global settings table for dynamic configurations
+model global_settings {
+  setting_key   String @id
+  setting_value String
 }

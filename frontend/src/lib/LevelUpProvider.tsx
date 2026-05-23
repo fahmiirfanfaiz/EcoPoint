@@ -9,6 +9,7 @@ import React, {
 } from "react";
 import { getBearerToken, getStoredAuth, API_BASE_URL } from "@/lib/auth";
 import LevelUpModal from "@/components/shared/LevelUpModal";
+import BadgeModal from "@/components/shared/BadgeModal";
 
 interface LevelUpContextType {
   checkLevelUp: () => void;
@@ -29,6 +30,14 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
     levelName: string;
   }>({ isOpen: false, levelNumber: 0, levelName: "" });
 
+  const [badgesToCelebrate, setBadgesToCelebrate] = useState<
+    Array<{
+      badges_id: string;
+      nama_badge: string;
+      deskripsi: string;
+    }>
+  >([]);
+
   const checkLevelUp = useCallback(async () => {
     const auth = getStoredAuth();
     const bearer = getBearerToken();
@@ -42,47 +51,65 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
       const data = await res.json();
 
       const currentLvl = data.level?.current;
-      if (!currentLvl) return;
+      const badgesCount = data.stats?.badges_earned;
+      const lastSeenLevel = data.user?.last_seen_level ?? 0;
+      const lastSeenBadgeCount = data.user?.last_seen_badge_count ?? 0;
 
-      const storageKey = `ecopoint_last_level_${auth.user.user_id}`;
-      const lastSeen = parseInt(
-        window.localStorage.getItem(storageKey) || "0",
-        10,
-      );
+      let triggerUpdate = false;
+      const updatePayload: Record<string, number> = {};
 
-      if (lastSeen > 0 && currentLvl.level_number > lastSeen) {
-        // Level up detected!
+      if (currentLvl && currentLvl.level_number > lastSeenLevel) {
         setLevelUpData({
           isOpen: true,
           levelNumber: currentLvl.level_number,
           levelName: currentLvl.nama_level,
         });
+        triggerUpdate = true;
+        updatePayload.seen_level = currentLvl.level_number;
       }
 
-      // Always update the stored level
-      window.localStorage.setItem(
-        storageKey,
-        currentLvl.level_number.toString(),
-      );
+      if (badgesCount !== undefined) {
+        const diff = badgesCount - lastSeenBadgeCount;
+        if (diff > 0) {
+          const newBadges = data.recent_achievements?.slice(0, diff) || [];
+          if (newBadges.length > 0) {
+            setBadgesToCelebrate((prev) => [...prev, ...newBadges]);
+          }
+          triggerUpdate = true;
+          updatePayload.seen_badge_count = badgesCount;
+        }
+      }
+
+      if (triggerUpdate) {
+        try {
+          await fetch(`${API_BASE_URL}/dashboard/seen`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${auth.token}`,
+            },
+            body: JSON.stringify(updatePayload),
+          });
+        } catch (e) {
+          console.error("Failed to update seen achievements", e);
+        }
+      }
     } catch (err) {
       console.error("LevelUp check error:", err);
     }
   }, []);
 
-  // Listen for any auth/points changes globally
   useEffect(() => {
     const handleAuthChange = () => {
-      // Small delay so that the backend has time to process any point updates
       setTimeout(checkLevelUp, 500);
     };
 
     window.addEventListener("ecopoint-auth-changed", handleAuthChange);
-
-    // Initial check on mount
-    checkLevelUp();
+    const initialCheck = setTimeout(checkLevelUp, 0);
 
     return () => {
       window.removeEventListener("ecopoint-auth-changed", handleAuthChange);
+      clearTimeout(initialCheck);
     };
   }, [checkLevelUp]);
 
@@ -95,6 +122,17 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
         levelNumber={levelUpData.levelNumber}
         levelName={levelUpData.levelName}
       />
+      {badgesToCelebrate.map((badge, index) => (
+        <BadgeModal
+          key={badge.badges_id + index}
+          isOpen={true}
+          onClose={() => {
+            setBadgesToCelebrate((prev) => prev.filter((b) => b !== badge));
+          }}
+          badgeName={badge.nama_badge}
+          badgeDesc={badge.deskripsi}
+        />
+      ))}
     </LevelUpContext.Provider>
   );
 }

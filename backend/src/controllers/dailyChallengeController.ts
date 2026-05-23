@@ -36,6 +36,54 @@ export const getAllChallenges = async (
 };
 
 /**
+ * GET /api/daily-challenges/admin/bonus
+ * Admin — Get the global daily challenge completion bonus
+ */
+export const getBonusSetting = async (
+  _req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const setting = await prisma.global_settings.findUnique({
+      where: { setting_key: "DAILY_CHALLENGE_BONUS" },
+    });
+    res.status(200).json({ bonus: setting ? Number(setting.setting_value) : 0 });
+  } catch (error) {
+    console.error("Get bonus setting error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * PUT /api/daily-challenges/admin/bonus
+ * Admin — Update the global daily challenge completion bonus
+ * Body: { bonus: number }
+ */
+export const updateBonusSetting = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const { bonus } = req.body;
+    if (bonus === undefined) {
+      res.status(400).json({ message: "bonus wajib diisi" });
+      return;
+    }
+
+    await prisma.global_settings.upsert({
+      where: { setting_key: "DAILY_CHALLENGE_BONUS" },
+      create: { setting_key: "DAILY_CHALLENGE_BONUS", setting_value: String(bonus) },
+      update: { setting_value: String(bonus) },
+    });
+
+    res.status(200).json({ message: "Bonus berhasil diupdate", bonus: Number(bonus) });
+  } catch (error) {
+    console.error("Update bonus setting error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
  * POST /api/daily-challenges/admin
  * Admin — Create a new daily challenge template
  * Body: { nama_challenge, deskripsi, poin_hadiah, target_count, challenge_type, is_permanent }
@@ -351,7 +399,13 @@ export const getTodayChallenge = async (
       })
     );
 
-    res.status(200).json({ challenges: challengesWithProgress });
+    // Fetch global bonus points setting
+    const bonusSetting = await prisma.global_settings.findUnique({
+      where: { setting_key: "DAILY_CHALLENGE_BONUS" }
+    });
+    const globalBonusPoints = bonusSetting ? Number(bonusSetting.setting_value) : 0;
+
+    res.status(200).json({ challenges: challengesWithProgress, global_bonus_points: globalBonusPoints });
   } catch (error) {
     console.error("Get today challenge error:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -508,17 +562,62 @@ export const claimPoints = async (
         },
       });
 
-      // Add points to user
+      // Add points and check for daily bonus
+      let pointsToAdd = Number(poinHadiah);
+      let bonusAwarded = false;
+      let bonusAmount = 0;
+
+      // Check if all today's challenges are completed
+      const todayChallengesAll = await tx.challenge_of_the_day.findMany({
+        where: { tanggal: today }
+      });
+      const todayIds = todayChallengesAll.map((tc: any) => tc.id);
+
+      const allProgress = await tx.user_daily_challenges.findMany({
+        where: {
+          user_id: userId,
+          challenge_of_the_day_id: { in: todayIds }
+        }
+      });
+
+      const user = await tx.users.findUnique({ where: { user_id: userId }, select: { last_daily_bonus_claim: true } });
+
+      const allCompleted = todayChallengesAll.every((tc: any) => {
+        const p = allProgress.find((up: any) => up.challenge_of_the_day_id === tc.id);
+        return p?.is_completed;
+      });
+
+      const hasClaimedBonusToday = user?.last_daily_bonus_claim && user.last_daily_bonus_claim.getTime() === today.getTime();
+
+      if (allCompleted && !hasClaimedBonusToday) {
+        const bonusSetting = await tx.global_settings.findUnique({
+          where: { setting_key: "DAILY_CHALLENGE_BONUS" }
+        });
+        bonusAmount = bonusSetting ? Number(bonusSetting.setting_value) : 0;
+
+        if (bonusAmount > 0) {
+          pointsToAdd += bonusAmount;
+          bonusAwarded = true;
+          // Update last_daily_bonus_claim
+          await tx.users.update({
+            where: { user_id: userId },
+            data: { last_daily_bonus_claim: today }
+          });
+        }
+      }
+
       const updatedUser = await tx.users.update({
         where: { user_id: userId },
         data: {
-          total_poin: { increment: poinHadiah },
+          total_poin: { increment: pointsToAdd },
         },
         select: { total_poin: true },
       });
 
       return {
         poin_didapat: Number(poinHadiah),
+        bonus_didapat: bonusAwarded ? bonusAmount : 0,
+        bonus_awarded: bonusAwarded,
         total_poin: Number(updatedUser.total_poin),
       };
     });
@@ -559,6 +658,8 @@ function getTodayDate(): Date {
 
 export default {
   // Admin
+  getBonusSetting,
+  updateBonusSetting,
   getAllChallenges,
   createChallenge,
   updateChallenge,
