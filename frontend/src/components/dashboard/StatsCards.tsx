@@ -1,6 +1,5 @@
 import React from "react";
-import { Zap, Recycle, Award, ChevronRight } from "lucide-react";
-import { getStoredAuth } from "@/lib/auth";
+import { Recycle, ChevronRight } from "lucide-react";
 
 interface StatCardProps {
   icon: React.ElementType;
@@ -35,24 +34,13 @@ const StatCard: React.FC<StatCardProps> = ({ icon: Icon, iconBg, iconColor, labe
   </div>
 );
 
-const StatsCards: React.FC = () => {
-  const [totalPoints, setTotalPoints] = React.useState(0);
+interface StatsCardsProps {
+  totalPoin?: number;
+  reportsSubmitted?: number;
+  badgesEarned?: number;
+}
 
-  const syncData = React.useCallback(() => {
-    const auth = getStoredAuth();
-    if (auth) {
-      setTotalPoints(auth.user.total_poin || 0);
-    } else {
-      setTotalPoints(0);
-    }
-  }, []);
-
-  React.useEffect(() => {
-    syncData();
-    window.addEventListener("ecopoint-auth-changed", syncData);
-    return () => window.removeEventListener("ecopoint-auth-changed", syncData);
-  }, [syncData]);
-
+const StatsCards: React.FC<StatsCardsProps> = ({ totalPoin = 0, reportsSubmitted = 0, badgesEarned = 0 }) => {
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
       <StatCard
@@ -64,14 +52,14 @@ const StatsCards: React.FC = () => {
         iconBg="bg-amber-100"
         iconColor="text-amber-600"
         label="Total Poin"
-        value={totalPoints.toLocaleString()}
+        value={totalPoin.toLocaleString()}
       />
       <StatCard
         icon={Recycle}
         iconBg="bg-blue-100"
         iconColor="text-blue-600"
         label="Laporan Dibuat"
-        value="48"
+        value={reportsSubmitted.toLocaleString()}
       />
       <StatCard
         icon={() => (
@@ -83,7 +71,7 @@ const StatsCards: React.FC = () => {
         iconBg="bg-purple-100"
         iconColor="text-purple-600"
         label="Badge Diraih"
-        value="7"
+        value={badgesEarned.toLocaleString()}
         showArrow
       />
     </div>

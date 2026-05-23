@@ -1,48 +1,44 @@
 import React from "react";
-import { Bell, CheckCircle, Award, Info, AlertCircle, Clock } from "lucide-react";
+import { Bell, Clock } from "lucide-react";
 
-const updates = [
-  {
-    icon: CheckCircle,
-    iconBg: "bg-emerald-100",
-    iconColor: "text-emerald-600",
-    title: "Report Verified",
-    desc: 'Your submission "Plastic Bottle #291" has been verified.',
-    time: "2 hours ago",
-    badge: "+20pts",
-  },
-  {
-    icon: () => (
-      <svg width="16" height="21" viewBox="0 0 16 21" fill="none">
-        <path d="M8 0L9.79 3.58L13.71 4.15L10.85 6.94L11.59 10.87L8 9.01L4.41 10.87L5.15 6.94L2.29 4.15L6.21 3.58L8 0Z" fill="currentColor" />
-        <path d="M4 12v8l4-2 4 2v-8" fill="currentColor" opacity="0.6"/>
-      </svg>
-    ),
-    iconBg: "bg-amber-100",
-    iconColor: "text-amber-600",
-    title: "Badge Earned!",
-    desc: 'You unlocked the "Early Adopter" badge.',
-    time: "Yesterday",
-  },
-  {
-    icon: Info,
-    iconBg: "bg-blue-100",
-    iconColor: "text-blue-600",
-    title: "Campus Event",
-    desc: 'Join the "Clean Campus Day" this Friday at the main square.',
-    time: "2 days ago",
-  },
-  {
-    icon: AlertCircle,
-    iconBg: "bg-red-100",
-    iconColor: "text-red-600",
-    title: "Action Required",
-    desc: "Please update your profile picture for the student ID.",
-    time: "4 days ago",
-  },
-];
+interface UpdateItem {
+  notifications_id: string;
+  pesan: string;
+  is_read: boolean;
+  created_at: string;
+}
 
-const RecentUpdates: React.FC = () => (
+interface RecentUpdatesProps {
+  updates?: UpdateItem[];
+}
+
+function timeAgo(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHr = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHr / 24);
+
+  if (diffMin < 1) return "Baru saja";
+  if (diffMin < 60) return `${diffMin} menit lalu`;
+  if (diffHr < 24) return `${diffHr} jam lalu`;
+  if (diffDay < 7) return `${diffDay} hari lalu`;
+  return date.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function getNotifStyle(pesan: string) {
+  const lower = pesan.toLowerCase();
+  if (lower.includes("badge") || lower.includes("lencana") || lower.includes("penghargaan"))
+    return { bg: "bg-amber-100", color: "text-amber-600" };
+  if (lower.includes("verif") || lower.includes("diterima") || lower.includes("berhasil"))
+    return { bg: "bg-emerald-100", color: "text-emerald-600" };
+  if (lower.includes("ditolak") || lower.includes("gagal") || lower.includes("error"))
+    return { bg: "bg-red-100", color: "text-red-600" };
+  return { bg: "bg-blue-100", color: "text-blue-600" };
+}
+
+const RecentUpdates: React.FC<RecentUpdatesProps> = ({ updates = [] }) => (
   <div
     className="rounded-[32px] bg-white p-6"
     style={{
@@ -58,37 +54,40 @@ const RecentUpdates: React.FC = () => (
     </div>
 
     {/* Items */}
-    <div className="flex flex-col gap-4">
-      {updates.map((item, i) => {
-        const Icon = item.icon;
-        return (
-          <div key={i} className="flex gap-3 rounded-3xl p-3 hover:bg-gray-50 transition-colors">
-            <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${item.iconBg} ${item.iconColor}`}>
-              <Icon size={20} />
-            </div>
-            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="font-outfit text-sm font-semibold leading-5 text-gray-800">{item.title}</span>
-              <span className="font-outfit text-xs leading-4 text-gray-500">{item.desc}</span>
-              <span className="font-outfit mt-0.5 flex items-center gap-1 text-[10px] leading-[15px] text-gray-400">
-                <Clock size={10} /> {item.time}
-              </span>
-            </div>
-            {item.badge && (
-              <div className="flex-shrink-0">
-                <span className="font-quicksand rounded-md bg-emerald-50 px-2 py-1 text-xs font-bold leading-4 text-emerald-500">{item.badge}</span>
+    {updates.length === 0 ? (
+      <div className="flex flex-col items-center gap-2 py-8">
+        <span className="text-4xl">🔔</span>
+        <p className="font-quicksand text-sm font-semibold text-gray-400">Belum ada notifikasi</p>
+        <p className="font-outfit text-xs text-gray-400">Notifikasi terbaru akan muncul di sini.</p>
+      </div>
+    ) : (
+      <div className="flex flex-col gap-4">
+        {updates.map((item) => {
+          const style = getNotifStyle(item.pesan);
+          return (
+            <div key={item.notifications_id} className={`flex gap-3 rounded-3xl p-3 transition-colors hover:bg-gray-50 ${!item.is_read ? "bg-emerald-50/30" : ""}`}>
+              <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${style.bg} ${style.color}`}>
+                <Bell size={18} />
               </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-
-    {/* Footer */}
-    <div className="mt-4 border-t border-emerald-100 pt-4 text-center">
-      <button className="font-outfit text-sm leading-5 text-gray-500 hover:text-emerald-500">View All Notifications</button>
-    </div>
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className={`font-outfit text-sm leading-5 ${!item.is_read ? "font-semibold text-gray-800" : "text-gray-600"}`}>
+                  {item.pesan}
+                </span>
+                <span className="font-outfit mt-0.5 flex items-center gap-1 text-[10px] leading-[15px] text-gray-400">
+                  <Clock size={10} /> {timeAgo(item.created_at)}
+                </span>
+              </div>
+              {!item.is_read && (
+                <div className="flex-shrink-0 mt-1">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 block" />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    )}
   </div>
 );
 
 export default RecentUpdates;
-
