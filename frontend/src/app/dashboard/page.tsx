@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { getBearerToken, getStoredAuth, updateStoredPoints } from "@/lib/auth";
 import { Skeleton } from "@/components/ui/skeleton";
 import DailyChallenges from "@/components/dashboard/DailyChallenges";
+import BonusModal from "@/components/shared/BonusModal";
 import { getAvatarUrl } from "@/components/dashboard/EditProfileModal";
 import {
   Zap,
@@ -88,6 +89,8 @@ export default function BerandaPage() {
   const [loading, setLoading] = useState(true);
   const [showChallengesModal, setShowChallengesModal] = useState(false);
   const [claimingId, setClaimingId] = useState<string | null>(null);
+  const [showBonusModal, setShowBonusModal] = useState(false);
+  const [earnedBonusAmount, setEarnedBonusAmount] = useState(0);
 
   const handleClaim = async (challengeOfTheDayId: string) => {
     const auth = getStoredAuth();
@@ -106,7 +109,12 @@ export default function BerandaPage() {
         const result = await res.json();
         updateStoredPoints(result.data.total_poin);
         // Refresh all data to get updated level and challenges
-        fetchAll();
+        await fetchAll();
+
+        if (result.data.bonus_awarded) {
+          setEarnedBonusAmount(result.data.bonus_didapat ?? 0);
+          setShowBonusModal(true);
+        }
       }
     } catch (e) {
       console.error("Claim error:", e);
@@ -677,6 +685,13 @@ export default function BerandaPage() {
       <DailyChallenges
         isOpen={showChallengesModal}
         onClose={() => setShowChallengesModal(false)}
+      />
+
+      {/* Bonus Modal */}
+      <BonusModal
+        isOpen={showBonusModal}
+        onClose={() => setShowBonusModal(false)}
+        bonusAmount={earnedBonusAmount}
       />
     </div>
   );

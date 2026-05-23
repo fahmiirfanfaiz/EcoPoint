@@ -33,6 +33,8 @@ export const getDashboard = async (
             created_at: true,
             last_seen_level: true,
             last_seen_badge_count: true,
+            current_login_streak: true,
+            last_login_date: true,
           },
         }),
 
@@ -144,6 +146,54 @@ export const getDashboard = async (
           nextLevel = null; // Max level reached
         }
       }
+    }
+
+    // ── Update Login Streak ──
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let streakUpdated = false;
+    let newStreak = user.current_login_streak || 0;
+    
+    if (!user.last_login_date) {
+      // First login ever
+      newStreak = 1;
+      streakUpdated = true;
+    } else {
+      const lastLogin = new Date(user.last_login_date);
+      lastLogin.setHours(0, 0, 0, 0);
+      
+      const diffTime = Math.abs(today.getTime() - lastLogin.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+      
+      if (diffDays === 1) {
+        // Logged in yesterday
+        newStreak += 1;
+        streakUpdated = true;
+      } else if (diffDays > 1) {
+        // Missed a day
+        newStreak = 1;
+        streakUpdated = true;
+      }
+    }
+
+    if (streakUpdated) {
+      await prisma.users.update({
+        where: { user_id: userId },
+        data: {
+          current_login_streak: newStreak,
+          last_login_date: today,
+        }
+      });
+      user.current_login_streak = newStreak;
+      user.last_login_date = today;
+
+      // Also trigger daily challenge for login_streak
+      const reqSimulated = { ...req, body: { action: "login_streak" } } as any;
+      const resSimulated = { status: () => ({ json: () => {} }) } as any;
+      import("./dailyChallengeController.js").then(({ trackAction }) => {
+        trackAction(reqSimulated, resSimulated).catch(console.error);
+      });
     }
 
     res.status(200).json({

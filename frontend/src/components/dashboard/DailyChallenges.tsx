@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { getStoredAuth, updateStoredPoints } from "@/lib/auth";
 import { Recycle, Share2, Trophy, Star, Eye } from "lucide-react";
-import confetti from "canvas-confetti";
+import BonusModal from "@/components/shared/BonusModal";
 
 interface TodayChallengeData {
   challenge_of_the_day_id: string;
@@ -64,6 +64,10 @@ const DailyChallenges: React.FC<DailyChallengesProps> = ({ isOpen, onClose }) =>
   const [error, setError] = useState<string | null>(null);
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const [globalBonusPoints, setGlobalBonusPoints] = useState(0);
+  
+  // Bonus Modal State
+  const [showBonusModal, setShowBonusModal] = useState(false);
+  const [earnedBonusAmount, setEarnedBonusAmount] = useState(0);
 
   const fetchChallenges = useCallback(async () => {
     setLoading(true);
@@ -109,13 +113,8 @@ const DailyChallenges: React.FC<DailyChallengesProps> = ({ isOpen, onClose }) =>
         updateStoredPoints(newTotal);
 
         if (bonusAwarded) {
-          confetti({
-            particleCount: 150,
-            spread: 70,
-            origin: { y: 0.6 },
-            colors: ['#10B981', '#34D399', '#059669', '#FCD34D'],
-            zIndex: 9999
-          });
+          setEarnedBonusAmount(bonusAmount);
+          setShowBonusModal(true);
         }
       }
     } catch (e) {
@@ -368,6 +367,12 @@ const DailyChallenges: React.FC<DailyChallengesProps> = ({ isOpen, onClose }) =>
           </span>
         </div>
       </div>
+
+      <BonusModal
+        isOpen={showBonusModal}
+        onClose={() => setShowBonusModal(false)}
+        bonusAmount={earnedBonusAmount}
+      />
     </div>
   );
 };

@@ -119,6 +119,13 @@ export const redeemReward = async (
       };
     });
 
+    // After successful transaction, track action for daily challenges
+    const reqSimulated = { ...req, body: { action: "redeem_reward" } } as any;
+    const resSimulated = { status: () => ({ json: () => {} }) } as any;
+    import("./dailyChallengeController.js").then(({ trackAction }) => {
+      trackAction(reqSimulated, resSimulated).catch(console.error);
+    });
+
     res.status(200).json({
       message: "Reward berhasil ditukar!",
       data: result,
