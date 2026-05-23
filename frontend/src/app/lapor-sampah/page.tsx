@@ -1,4 +1,3 @@
-import Estimation from "@/components/laporsampah/Estimation";
 import WasteUpload from "../../components/laporsampah/WasteUpload";
 import History from "@/components/laporsampah/History";
 
@@ -14,7 +13,6 @@ export default function LaporSampahPage() {
         </p>
       </div>
       <WasteUpload />
-      <Estimation />
       <History />
     </main>
   );
