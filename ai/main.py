@@ -1,10 +1,14 @@
-from fastapi import FastAPI, Form, File, UploadFile, HTTPException
+import os
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 from classify import classify_waste
 from classify import verify_cleanup
 
 app = FastAPI()
+
+API_KEY_HEADER_NAME = "X-API-Key"
+AI_SERVICE_API_KEY = os.getenv("AI_SERVICE_API_KEY", "")
 
 app.add_middleware(
     CORSMiddleware,
@@ -14,12 +18,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+def require_api_key(x_api_key: str = Header(default="", alias=API_KEY_HEADER_NAME)) -> None:
+    if not AI_SERVICE_API_KEY:
+        raise HTTPException(
+            status_code=500,
+            detail="AI_SERVICE_API_KEY is not configured on the AI service",
+        )
+
+    if not x_api_key or x_api_key != AI_SERVICE_API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid or missing API key")
+
 @app.get("/")
 async def root():
     return {"message": "EcoPoint AI classifier is running"}
 
 @app.post("/classify")
-async def classify(description: Optional[str] = Form(None), file: UploadFile = File(None)):
+async def classify(
+    description: Optional[str] = Form(None),
+    file: UploadFile = File(None),
+    _auth: None = Depends(require_api_key),
+):
     if not description and not file:
         raise HTTPException(status_code=400, detail="Provide `description` or upload an image file")
 
@@ -40,7 +59,12 @@ async def classify(description: Optional[str] = Form(None), file: UploadFile = F
     return {"ok": True, "result": result}
 
 @app.post("/verify-cleanup")
-async def verify_cleanup_endpoint(before_image: UploadFile = File(...), after_image: UploadFile = File(...), location: Optional[str] = Form(None)):
+async def verify_cleanup_endpoint(
+    before_image: UploadFile = File(...),
+    after_image: UploadFile = File(...),
+    location: Optional[str] = Form(None),
+    _auth: None = Depends(require_api_key),
+):
     """
     Endpoint verifikasi kebersihan.
     Menerima 2 file gambar (before & after) via multipart/form-data.

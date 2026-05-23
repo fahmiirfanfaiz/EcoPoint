@@ -1,7 +1,13 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { getStoredAuth, API_BASE_URL } from "@/lib/auth";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
+import { getBearerToken, getStoredAuth, API_BASE_URL } from "@/lib/auth";
 import LevelUpModal from "@/components/shared/LevelUpModal";
 import BadgeModal from "@/components/shared/BadgeModal";
 
@@ -9,7 +15,9 @@ interface LevelUpContextType {
   checkLevelUp: () => void;
 }
 
-const LevelUpContext = createContext<LevelUpContextType>({ checkLevelUp: () => {} });
+const LevelUpContext = createContext<LevelUpContextType>({
+  checkLevelUp: () => {},
+});
 
 export function useLevelUp() {
   return useContext(LevelUpContext);
@@ -22,19 +30,22 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
     levelName: string;
   }>({ isOpen: false, levelNumber: 0, levelName: "" });
 
-  const [badgesToCelebrate, setBadgesToCelebrate] = useState<Array<{
-    badges_id: string;
-    nama_badge: string;
-    deskripsi: string;
-  }>>([]);
+  const [badgesToCelebrate, setBadgesToCelebrate] = useState<
+    Array<{
+      badges_id: string;
+      nama_badge: string;
+      deskripsi: string;
+    }>
+  >([]);
 
   const checkLevelUp = useCallback(async () => {
     const auth = getStoredAuth();
-    if (!auth?.token || !auth.user?.user_id) return;
+    const bearer = getBearerToken();
+    if (!auth?.user?.user_id || !bearer) return;
 
     try {
       const res = await fetch(`${API_BASE_URL}/dashboard`, {
-        headers: { Authorization: `Bearer ${auth.token}` },
+        headers: { Authorization: bearer },
       });
       if (!res.ok) return;
       const data = await res.json();
@@ -45,10 +56,9 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
       const lastSeenBadgeCount = data.user?.last_seen_badge_count ?? 0;
 
       let triggerUpdate = false;
-      const updatePayload: any = {};
+      const updatePayload: Record<string, number> = {};
 
       if (currentLvl && currentLvl.level_number > lastSeenLevel) {
-        // Level up detected!
         setLevelUpData({
           isOpen: true,
           levelNumber: currentLvl.level_number,
@@ -61,7 +71,6 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
       if (badgesCount !== undefined) {
         const diff = badgesCount - lastSeenBadgeCount;
         if (diff > 0) {
-          // New badge(s) earned!
           const newBadges = data.recent_achievements?.slice(0, diff) || [];
           if (newBadges.length > 0) {
             setBadgesToCelebrate((prev) => [...prev, ...newBadges]);
@@ -75,9 +84,9 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
         try {
           await fetch(`${API_BASE_URL}/dashboard/seen`, {
             method: "POST",
-            headers: { 
+            headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${auth.token}` 
+              Authorization: `Bearer ${auth.token}`,
             },
             body: JSON.stringify(updatePayload),
           });
@@ -90,20 +99,17 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Listen for any auth/points changes globally
   useEffect(() => {
     const handleAuthChange = () => {
-      // Small delay so that the backend has time to process any point updates
       setTimeout(checkLevelUp, 500);
     };
 
     window.addEventListener("ecopoint-auth-changed", handleAuthChange);
-    
-    // Initial check on mount
-    checkLevelUp();
+    const initialCheck = setTimeout(checkLevelUp, 0);
 
     return () => {
       window.removeEventListener("ecopoint-auth-changed", handleAuthChange);
+      clearTimeout(initialCheck);
     };
   }, [checkLevelUp]);
 
