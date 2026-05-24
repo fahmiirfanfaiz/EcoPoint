@@ -19,6 +19,6 @@
     "esModuleInterop": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src/**/*", "generated/**/*"],
+  "include": ["src/**/*", "generated/**/*", "api/**/*"],
   "exclude": ["node_modules", "dist", "generated", "prisma.config.ts"]
 }

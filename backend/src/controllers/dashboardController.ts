@@ -153,7 +153,7 @@ export const getDashboard = async (
     today.setHours(0, 0, 0, 0);
 
     let streakUpdated = false;
-    let newStreak = user.current_login_streak || 0;
+    let newStreak:number = Number(user.current_login_streak) || 0;
     
     if (!user.last_login_date) {
       // First login ever
@@ -177,6 +177,9 @@ export const getDashboard = async (
       }
     }
 
+    let displayStreak = Number(user.current_login_streak) || 0;
+    let displayLastLogin: Date | null = user.last_login_date ? new Date(user.last_login_date) : null;
+
     if (streakUpdated) {
       await prisma.users.update({
         where: { user_id: userId },
@@ -185,8 +188,8 @@ export const getDashboard = async (
           last_login_date: today,
         }
       });
-      user.current_login_streak = newStreak;
-      user.last_login_date = today;
+      displayStreak = newStreak;
+      displayLastLogin = today;
 
       // Also trigger daily challenge for login_streak
       const reqSimulated = { ...req, body: { action: "login_streak" } } as any;
@@ -205,6 +208,8 @@ export const getDashboard = async (
         total_poin: Number(user.total_poin),
         last_seen_level: user.last_seen_level,
         last_seen_badge_count: user.last_seen_badge_count,
+        current_login_streak: displayStreak,
+        last_login_date: displayLastLogin,
       },
       stats: {
         total_poin: Number(user.total_poin),
