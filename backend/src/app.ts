@@ -23,6 +23,15 @@ app.use(
 );
 app.use(express.json());
 
+// ── Lightweight public responses for deployment health checks ─
+app.get("/", (_req, res) => {
+  res.status(200).json({ status: "ok", service: "EcoPoint API" });
+});
+
+app.get(["/favicon.ico", "/favicon.png"], (_req, res) => {
+  res.status(204).end();
+});
+
 // ── Routes ─────────────────────────────────────────────────
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
