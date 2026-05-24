@@ -34,7 +34,8 @@ const getErrorMessage = (error: unknown) => {
 export default function AdminUsers() {
   const router = useRouter();
   const apiBaseUrl =
-    process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api";
+    process.env.NEXT_PUBLIC_API_BASE_URL ??
+    "https://api-ecopoint.vercel.app/api";
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

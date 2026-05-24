@@ -226,12 +226,16 @@ export async function POST(request: Request) {
       if (typeof classifyResultRaw === "string" && classifyResultRaw) {
         classifyResult = JSON.parse(classifyResultRaw);
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     try {
       if (typeof verifyResultRaw === "string" && verifyResultRaw) {
         verifyResult = JSON.parse(verifyResultRaw);
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
 
     const fotoData: Record<string, unknown> = {
       before: beforeUrl,
@@ -257,14 +261,17 @@ export async function POST(request: Request) {
 
     // Call backend to track daily challenge progress for "waste_report"
     try {
-      await fetch("http://localhost:4000/api/daily-challenges/track-action", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${authorization.replace(/^Bearer\s+/i, "").trim()}`
+      await fetch(
+        "https://api-ecopoint.vercel.app/api/daily-challenges/track-action",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authorization.replace(/^Bearer\s+/i, "").trim()}`,
+          },
+          body: JSON.stringify({ action: "waste_report" }),
         },
-        body: JSON.stringify({ action: "waste_report" })
-      });
+      );
     } catch (e) {
       console.error("Failed to track waste_report action:", e);
       // Non-fatal, continue

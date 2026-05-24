@@ -16,7 +16,8 @@ import {
   MapPin,
 } from "lucide-react";
 
-const API = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api";
+const API =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://api-ecopoint.vercel.app/api";
 
 interface ReportData {
   report_id: number;
@@ -298,7 +299,9 @@ function ReportDetail({ report }: { report: ReportData }) {
             <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-sky-100">
               <Bot size={16} className="text-sky-600" />
             </div>
-            <p className="text-sm font-bold text-sky-800">Hasil Klasifikasi AI</p>
+            <p className="text-sm font-bold text-sky-800">
+              Hasil Klasifikasi AI
+            </p>
           </div>
           <div className="space-y-1.5 text-xs text-sky-700">
             <p>
@@ -328,7 +331,9 @@ function ReportDetail({ report }: { report: ReportData }) {
           <div className="flex items-center gap-2 mb-2">
             <div
               className={`flex items-center justify-center w-7 h-7 rounded-lg ${
-                fotoData.verify_result.reward_eligible ? "bg-emerald-100" : "bg-gray-100"
+                fotoData.verify_result.reward_eligible
+                  ? "bg-emerald-100"
+                  : "bg-gray-100"
               }`}
             >
               <FileCheck
@@ -342,7 +347,9 @@ function ReportDetail({ report }: { report: ReportData }) {
             </div>
             <p
               className={`text-sm font-bold ${
-                fotoData.verify_result.reward_eligible ? "text-emerald-800" : "text-gray-700"
+                fotoData.verify_result.reward_eligible
+                  ? "text-emerald-800"
+                  : "text-gray-700"
               }`}
             >
               Hasil Verifikasi Kebersihan
@@ -350,11 +357,14 @@ function ReportDetail({ report }: { report: ReportData }) {
           </div>
           <div
             className={`space-y-1.5 text-xs ${
-              fotoData.verify_result.reward_eligible ? "text-emerald-700" : "text-gray-600"
+              fotoData.verify_result.reward_eligible
+                ? "text-emerald-700"
+                : "text-gray-600"
             }`}
           >
             <p>
-              <span className="font-semibold">Status:</span> {fotoData.verify_result.status}
+              <span className="font-semibold">Status:</span>{" "}
+              {fotoData.verify_result.status}
             </p>
             <p>
               <span className="font-semibold">Confidence:</span>{" "}
@@ -410,8 +420,8 @@ export default function ReportHistory() {
       if (!res.ok) throw new Error("Gagal memuat riwayat");
       const data = await res.json();
       setReports(data.reports ?? []);
-    } catch (e: any) {
-      setError(e.message ?? "Terjadi kesalahan");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Terjadi kesalahan");
     } finally {
       setLoading(false);
     }
@@ -436,10 +446,10 @@ export default function ReportHistory() {
   const displayedReports = showAll ? reports : reports.slice(0, 5);
 
   const pendingCount = reports.filter(
-    (r) => r.status_validasi.replace(/'/g, "").trim() === "pending"
+    (r) => r.status_validasi.replace(/'/g, "").trim() === "pending",
   ).length;
   const approvedCount = reports.filter(
-    (r) => r.status_validasi.replace(/'/g, "").trim() === "approved"
+    (r) => r.status_validasi.replace(/'/g, "").trim() === "approved",
   ).length;
 
   return (

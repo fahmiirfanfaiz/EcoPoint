@@ -12,12 +12,22 @@ import usersRoutes from "./routes/usersRoute.js";
 import wasteReportRoutes from "./routes/wasteReportRoute.js";
 
 const app = express();
+const productionFrontendOrigin = "https://ecopoint-client.vercel.app";
+const localOrigins = ["http://localhost:3000", "http://127.0.0.1:3000"];
+const allowedOrigins = [...localOrigins, productionFrontendOrigin];
 
 // ── Middleware ──────────────────────────────────────────────
 app.use(helmet());
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://127.0.0.1:3000"],
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
     credentials: true,
   }),
 );

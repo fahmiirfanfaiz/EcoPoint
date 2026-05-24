@@ -104,23 +104,36 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const handleAuthChange = () => {
-      setTimeout(checkLevelUp, 500);
+      const timeoutId = window.setTimeout(() => {
+        void checkLevelUp();
+      }, 500);
+
+      return () => window.clearTimeout(timeoutId);
     };
 
     window.addEventListener("ecopoint-auth-changed", handleAuthChange);
-    const initialCheck = setTimeout(checkLevelUp, 0);
+    const initialCheck = window.setTimeout(() => {
+      void checkLevelUp();
+    }, 0);
 
     return () => {
       window.removeEventListener("ecopoint-auth-changed", handleAuthChange);
-      clearTimeout(initialCheck);
+      window.clearTimeout(initialCheck);
     };
   }, [checkLevelUp]);
 
   // Check level up whenever user navigates to a different page
   useEffect(() => {
     if (pathname) {
-      checkLevelUp();
+      const pathnameCheck = window.setTimeout(() => {
+        void checkLevelUp();
+      }, 0);
+
+      return () => {
+        window.clearTimeout(pathnameCheck);
+      };
     }
+    return undefined;
   }, [pathname, checkLevelUp]);
 
   return (

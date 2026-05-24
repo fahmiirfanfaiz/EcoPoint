@@ -24,7 +24,8 @@ import {
   Gift,
 } from "lucide-react";
 
-const API = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api";
+const API =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://api-ecopoint.vercel.app/api";
 
 interface TodayChallengeItem {
   challenge_of_the_day_id: string;
@@ -179,46 +180,47 @@ export default function BerandaPage() {
   const greeting =
     hour < 12 ? "Selamat Pagi" : hour < 17 ? "Selamat Siang" : "Selamat Malam";
 
-  if (loading) return (
-    <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-8 px-6 py-8">
-      {/* Hero Skeleton */}
-      <Skeleton className="h-[280px] w-full rounded-[32px] md:h-[240px]" />
-      
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_360px]">
-        {/* Left Column */}
-        <div className="flex flex-col gap-6">
-          <div className="rounded-[28px] bg-white p-6 shadow-sm border border-gray-100 space-y-4">
-            <Skeleton className="h-8 w-1/3 rounded-lg" />
-            <div className="space-y-3">
-              <Skeleton className="h-[88px] w-full rounded-2xl" />
-              <Skeleton className="h-[88px] w-full rounded-2xl" />
-              <Skeleton className="h-[88px] w-full rounded-2xl" />
-            </div>
-          </div>
-          <div className="rounded-[28px] bg-white p-6 shadow-sm border border-gray-100 space-y-4">
-            <Skeleton className="h-8 w-1/3 rounded-lg" />
-            <Skeleton className="h-[160px] w-full rounded-2xl" />
-          </div>
-        </div>
+  if (loading)
+    return (
+      <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-8 px-6 py-8">
+        {/* Hero Skeleton */}
+        <Skeleton className="h-[280px] w-full rounded-[32px] md:h-[240px]" />
 
-        {/* Right Column */}
-        <div className="flex flex-col gap-6">
-          <div className="rounded-[28px] bg-white p-6 shadow-sm border border-gray-100 space-y-4">
-            <Skeleton className="h-8 w-1/2 rounded-lg" />
-            <div className="space-y-3">
-              <Skeleton className="h-[60px] w-full rounded-xl" />
-              <Skeleton className="h-[60px] w-full rounded-xl" />
-              <Skeleton className="h-[60px] w-full rounded-xl" />
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_360px]">
+          {/* Left Column */}
+          <div className="flex flex-col gap-6">
+            <div className="rounded-[28px] bg-white p-6 shadow-sm border border-gray-100 space-y-4">
+              <Skeleton className="h-8 w-1/3 rounded-lg" />
+              <div className="space-y-3">
+                <Skeleton className="h-[88px] w-full rounded-2xl" />
+                <Skeleton className="h-[88px] w-full rounded-2xl" />
+                <Skeleton className="h-[88px] w-full rounded-2xl" />
+              </div>
+            </div>
+            <div className="rounded-[28px] bg-white p-6 shadow-sm border border-gray-100 space-y-4">
+              <Skeleton className="h-8 w-1/3 rounded-lg" />
+              <Skeleton className="h-[160px] w-full rounded-2xl" />
             </div>
           </div>
-          <div className="rounded-[28px] bg-white p-6 shadow-sm border border-gray-100 space-y-4">
-            <Skeleton className="h-8 w-2/3 rounded-lg" />
-            <Skeleton className="h-[100px] w-full rounded-xl" />
+
+          {/* Right Column */}
+          <div className="flex flex-col gap-6">
+            <div className="rounded-[28px] bg-white p-6 shadow-sm border border-gray-100 space-y-4">
+              <Skeleton className="h-8 w-1/2 rounded-lg" />
+              <div className="space-y-3">
+                <Skeleton className="h-[60px] w-full rounded-xl" />
+                <Skeleton className="h-[60px] w-full rounded-xl" />
+                <Skeleton className="h-[60px] w-full rounded-xl" />
+              </div>
+            </div>
+            <div className="rounded-[28px] bg-white p-6 shadow-sm border border-gray-100 space-y-4">
+              <Skeleton className="h-8 w-2/3 rounded-lg" />
+              <Skeleton className="h-[100px] w-full rounded-xl" />
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
 
   return (
     <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-8 px-6 py-8">
