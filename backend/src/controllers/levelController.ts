@@ -21,7 +21,7 @@ export const getLevels = async (
     });
 
     res.status(200).json({
-      levels: levels.map((l) => ({
+      levels: levels.map((l: (typeof levels)[number]) => ({
         level_id: l.level_id,
         level_number: l.level_number,
         nama_level: l.nama_level,

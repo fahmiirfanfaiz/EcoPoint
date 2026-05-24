@@ -12,7 +12,7 @@ export const getBadges = async (req: Request, res: Response) => {
       orderBy: { nilai_syarat: "asc" },
     });
     
-    const formattedBadges = badges.map((b: typeof badges[number]) => ({
+    const formattedBadges = badges.map((b: (typeof badges)[number]) => ({
       ...b,
       syarat_poin: Number(b.syarat_poin),
       nilai_syarat: Number(b.nilai_syarat),
@@ -40,7 +40,7 @@ export const getAllBadgesAdmin = async (_req: Request, res: Response) => {
     });
 
     res.status(200).json({
-      badges: badges.map((b) => ({
+      badges: badges.map((b: (typeof badges)[number]) => ({
         badges_id: b.badges_id,
         nama_badge: b.nama_badge,
         deskripsi: b.deskripsi,

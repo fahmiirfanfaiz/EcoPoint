@@ -115,11 +115,9 @@ export const createChallenge = async (
     } = req.body;
 
     if (!nama_challenge || !deskripsi || !challenge_type) {
-      res
-        .status(400)
-        .json({
-          message: "nama_challenge, deskripsi, dan challenge_type wajib diisi",
-        });
+      res.status(400).json({
+        message: "nama_challenge, deskripsi, dan challenge_type wajib diisi",
+      });
       return;
     }
 
@@ -254,28 +252,28 @@ export const getTodayAdmin = async (
     });
 
     if (todayChallenges.length === 0) {
-      res
-        .status(200)
-        .json({
-          challenges: [],
-          message: "Belum ada challenge untuk hari ini",
-        });
+      res.status(200).json({
+        challenges: [],
+        message: "Belum ada challenge untuk hari ini",
+      });
       return;
     }
 
     res.status(200).json({
-      challenges: todayChallenges.map((tc) => ({
-        challenge_of_the_day_id: tc.id,
-        tanggal: tc.tanggal,
-        challenge_id: tc.daily_challenges.challenge_id,
-        nama_challenge: tc.daily_challenges.nama_challenge,
-        deskripsi: tc.daily_challenges.deskripsi,
-        poin_hadiah: Number(tc.daily_challenges.poin_hadiah),
-        target_count: Number(tc.daily_challenges.target_count),
-        challenge_type: tc.daily_challenges.challenge_type,
-        is_active: tc.daily_challenges.is_active,
-        is_permanent: tc.daily_challenges.is_permanent,
-      })),
+      challenges: todayChallenges.map(
+        (tc: (typeof todayChallenges)[number]) => ({
+          challenge_of_the_day_id: tc.id,
+          tanggal: tc.tanggal,
+          challenge_id: tc.daily_challenges.challenge_id,
+          nama_challenge: tc.daily_challenges.nama_challenge,
+          deskripsi: tc.daily_challenges.deskripsi,
+          poin_hadiah: Number(tc.daily_challenges.poin_hadiah),
+          target_count: Number(tc.daily_challenges.target_count),
+          challenge_type: tc.daily_challenges.challenge_type,
+          is_active: tc.daily_challenges.is_active,
+          is_permanent: tc.daily_challenges.is_permanent,
+        }),
+      ),
     });
   } catch (error) {
     console.error("Get today admin error:", error);
@@ -307,7 +305,9 @@ export const resetTodayChallenges = async (
     }
 
     // Check if any user has progress on any of today's challenges
-    const todayIds = todayChallenges.map((tc) => tc.id);
+    const todayIds = todayChallenges.map(
+      (tc: (typeof todayChallenges)[number]) => tc.id,
+    );
     const activeProgress = await prisma.user_daily_challenges.findFirst({
       where: {
         challenge_of_the_day_id: { in: todayIds },
@@ -327,12 +327,10 @@ export const resetTodayChallenges = async (
       where: { tanggal: today },
     });
 
-    res
-      .status(200)
-      .json({
-        message:
-          "Daily challenges hari ini berhasil direset. Challenge baru akan dipilih otomatis saat user mengakses.",
-      });
+    res.status(200).json({
+      message:
+        "Daily challenges hari ini berhasil direset. Challenge baru akan dipilih otomatis saat user mengakses.",
+    });
   } catch (error) {
     console.error("Reset today challenges error:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -424,7 +422,7 @@ export const getTodayChallenge = async (
 
     // If user is authenticated, include their progress for each challenge
     const challengesWithProgress = await Promise.all(
-      todayChallenges.map(async (tc) => {
+      todayChallenges.map(async (tc: (typeof todayChallenges)[number]) => {
         let userProgress = null;
         if (req.userId) {
           const progress = await prisma.user_daily_challenges.findUnique({
@@ -468,12 +466,10 @@ export const getTodayChallenge = async (
       ? Number(bonusSetting.setting_value)
       : 300;
 
-    res
-      .status(200)
-      .json({
-        challenges: challengesWithProgress,
-        global_bonus_points: globalBonusPoints,
-      });
+    res.status(200).json({
+      challenges: challengesWithProgress,
+      global_bonus_points: globalBonusPoints,
+    });
   } catch (error) {
     console.error("Get today challenge error:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -766,12 +762,10 @@ export const trackAction = async (
 
     if (matchingChallenges.length === 0) {
       // No matching challenge for today, do nothing but return ok
-      res
-        .status(200)
-        .json({
-          message: "No matching challenge for today",
-          progress_updated: false,
-        });
+      res.status(200).json({
+        message: "No matching challenge for today",
+        progress_updated: false,
+      });
       return;
     }
 

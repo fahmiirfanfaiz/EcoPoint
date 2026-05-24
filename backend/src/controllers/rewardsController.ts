@@ -8,7 +8,7 @@ import { AuthRequest } from "../middleware/auth.js";
  */
 export const getRewards = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const rewards = await prisma.rewards.findMany({
@@ -17,7 +17,7 @@ export const getRewards = async (
     });
 
     res.status(200).json({
-      rewards: rewards.map((r) => ({
+      rewards: rewards.map((r: (typeof rewards)[number]) => ({
         ...r,
         poin_dibutuhkan: Number(r.poin_dibutuhkan),
         stok: Number(r.stok),
@@ -43,7 +43,7 @@ export const getRewards = async (
  */
 export const redeemReward = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const userId = req.userId!;
@@ -54,7 +54,7 @@ export const redeemReward = async (
       return;
     }
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // 1. Get user's current points
       const user = await tx.users.findUnique({
         where: { user_id: userId },
@@ -156,7 +156,7 @@ export const redeemReward = async (
  */
 export const getRedemptionHistory = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const userId = req.userId!;
@@ -175,7 +175,7 @@ export const getRedemptionHistory = async (
     });
 
     res.status(200).json({
-      redemptions: redemptions.map((r) => ({
+      redemptions: redemptions.map((r: (typeof redemptions)[number]) => ({
         redemption_id: r.redemption_id,
         reward_name: r.rewards.nama_reward,
         reward_description: r.rewards.deskripsi,
