@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Settings, Plus, Zap, Star } from "lucide-react";
+import { Settings, Plus, Zap, Star, Calendar } from "lucide-react";
 import {
   AuthUser,
   getBearerToken,
@@ -28,9 +28,10 @@ interface LevelInfo {
 
 interface ProfileCardProps {
   onOpenChallenges?: () => void;
+  memberSince?: string | null;
 }
 
-const ProfileCard: React.FC<ProfileCardProps> = ({ onOpenChallenges }) => {
+const ProfileCard: React.FC<ProfileCardProps> = ({ onOpenChallenges, memberSince }) => {
   const [user, setUser] = React.useState<AuthUser | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [levelInfo, setLevelInfo] = React.useState<LevelInfo | null>(null);
@@ -152,7 +153,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onOpenChallenges }) => {
         {/* Avatar */}
         <div className="relative flex-shrink-0">
           <div
-            className="h-[128px] w-[128px] overflow-hidden rounded-full bg-emerald-100"
+            onClick={() => setIsEditModalOpen(true)}
+            className="h-[128px] w-[128px] overflow-hidden rounded-full bg-emerald-100 cursor-pointer transition-transform hover:scale-105"
             style={{
               boxShadow:
                 "0px 8px 10px -6px rgba(0,0,0,0.10), 0px 20px 25px -5px rgba(0,0,0,0.10)",
@@ -210,6 +212,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onOpenChallenges }) => {
             >
               {user?.fakultas || "Fakultas belum diset"}
             </span>
+            {memberSince && (
+              <span className="flex items-center gap-1.5 font-outfit rounded-lg px-3 py-1 text-sm leading-5 text-gray-500 bg-gray-50 border border-gray-100">
+                <Calendar size={14} className="text-gray-400" />
+                Bergabung sejak {memberSince}
+              </span>
+            )}
           </div>
 
           {/* Level progress */}
@@ -263,6 +271,31 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ onOpenChallenges }) => {
             <Zap size={20} className="text-emerald-700" />
             <span className="font-outfit text-base leading-6 text-emerald-700">
               Daily Challenges
+            </span>
+          </button>
+          <button
+            onClick={() => {
+              const url = window.location.origin;
+              navigator.clipboard.writeText(`Ayo bergabung ke EcoPoint! Lapor sampah plastikmu dan dapatkan poin. ${url}`);
+              alert("Link undangan berhasil disalin!");
+              const bearer = getBearerToken();
+              if (bearer) {
+                fetch(`${API_BASE_URL}/daily-challenges/track-action`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: bearer,
+                  },
+                  body: JSON.stringify({ action: "share_invite" }),
+                }).catch(() => {});
+              }
+            }}
+            className="flex items-center justify-center gap-2 rounded-3xl bg-blue-50 px-6 py-3 transition hover:bg-blue-100"
+            style={{ outline: "1px #BFDBFE solid", outlineOffset: "-1px" }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+            <span className="font-outfit text-base leading-6 text-blue-700">
+              Bagikan Undangan
             </span>
           </button>
         </div>

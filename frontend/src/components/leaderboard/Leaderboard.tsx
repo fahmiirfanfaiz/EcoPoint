@@ -95,6 +95,19 @@ export default function LeaderboardKampus() {
         }
         const data = await response.json();
         setLeaderboardData(data.leaderboard);
+
+        // Try to track daily challenge action
+        const token = localStorage.getItem("token");
+        if (token) {
+          fetch(`${API_BASE_URL}/daily-challenges/track-action`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ action: "view_leaderboard" })
+          }).catch(() => {});
+        }
       } catch (error) {
         console.error("Failed to fetch leaderboard", error);
       } finally {

@@ -7,6 +7,7 @@ import React, {
   useEffect,
   useCallback,
 } from "react";
+import { usePathname } from "next/navigation";
 import { getBearerToken, getStoredAuth, API_BASE_URL } from "@/lib/auth";
 import LevelUpModal from "@/components/shared/LevelUpModal";
 import BadgeModal from "@/components/shared/BadgeModal";
@@ -29,6 +30,8 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
     levelNumber: number;
     levelName: string;
   }>({ isOpen: false, levelNumber: 0, levelName: "" });
+
+  const pathname = usePathname();
 
   const [badgesToCelebrate, setBadgesToCelebrate] = useState<
     Array<{
@@ -90,12 +93,12 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
             },
             body: JSON.stringify(updatePayload),
           });
-        } catch (e) {
-          console.error("Failed to update seen achievements", e);
+        } catch {
+          // Silently ignore — non-critical update
         }
       }
-    } catch (err) {
-      console.error("LevelUp check error:", err);
+    } catch {
+      // Silently ignore fetch failures (network down, user not logged in, etc.)
     }
   }, []);
 
@@ -112,6 +115,13 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
       clearTimeout(initialCheck);
     };
   }, [checkLevelUp]);
+
+  // Check level up whenever user navigates to a different page
+  useEffect(() => {
+    if (pathname) {
+      checkLevelUp();
+    }
+  }, [pathname, checkLevelUp]);
 
   return (
     <LevelUpContext.Provider value={{ checkLevelUp }}>

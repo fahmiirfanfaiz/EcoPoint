@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { clearStoredAuth, getStoredAuth, AuthUser } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { getAvatarUrl } from "@/components/dashboard/EditProfileModal";
+import DailyChallenges from "@/components/dashboard/DailyChallenges";
 
 const navLinks = [
   { label: "Beranda", href: "/dashboard" },
@@ -23,6 +24,7 @@ const Navbar: React.FC = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userObj, setUserObj] = useState<AuthUser | null>(null);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [showChallenges, setShowChallenges] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -47,6 +49,29 @@ const Navbar: React.FC = () => {
 
     syncAuthState();
     window.addEventListener("ecopoint-auth-changed", syncAuthState);
+
+    // Sync user profile (points) from backend on mount
+    const auth = getStoredAuth();
+    if (auth?.token) {
+      const API = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api";
+      fetch(`${API}/auth/me`, {
+        headers: { Authorization: `Bearer ${auth.token}` },
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (data?.user) {
+            if (
+              auth.user.total_poin !== data.user.total_poin ||
+              auth.user.profile_pic !== data.user.profile_pic
+            ) {
+              const updatedAuth = { ...auth, user: data.user };
+              window.localStorage.setItem("ecopoint_auth", JSON.stringify(updatedAuth));
+              window.dispatchEvent(new Event("ecopoint-auth-changed"));
+            }
+          }
+        })
+        .catch((err) => console.error("Error syncing auth on mount:", err));
+    }
 
     return () => {
       window.removeEventListener("ecopoint-auth-changed", syncAuthState);
@@ -90,7 +115,7 @@ const Navbar: React.FC = () => {
           </svg>
         </span>
         <span className="font-outfit text-[13px] font-bold leading-5 text-emerald-800">
-          1,240
+          {userObj?.total_poin?.toLocaleString("id-ID") ?? "0"}
         </span>
       </div>
 
@@ -132,6 +157,15 @@ const Navbar: React.FC = () => {
               >
                 Profil Saya
               </Link>
+              <button
+                onClick={() => {
+                  setProfileDropdownOpen(false);
+                  setShowChallenges(true);
+                }}
+                className="block w-full rounded-xl px-4 py-2.5 text-left text-sm font-semibold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors cursor-pointer"
+              >
+                Daily Challenges
+              </button>
               {userRole === "admin" && (
                 <Link
                   href="/admin"
@@ -262,10 +296,19 @@ const Navbar: React.FC = () => {
                       <svg width="14" height="14" viewBox="0 0 25 24" fill="none">
                         <path d="M12.5 2C6.98 2 2.5 6.48 2.5 12s4.48 10 10 10 10-4.48 10-10S18.02 2 12.5 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.22V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.94s4.18 1.36 4.18 3.85c0 1.89-1.44 2.88-3.12 3.19z" fill="#065F46" />
                       </svg>
-                      <span className="text-xs font-bold text-emerald-800">1,240 PTS</span>
+                      <span className="text-xs font-bold text-emerald-800">{userObj?.total_poin?.toLocaleString("id-ID") ?? "0"} PTS</span>
                     </div>
                   </div>
                   <Link href="/profile" className="rounded-xl px-4 py-3 text-sm font-bold text-gray-500" onClick={() => setMobileMenuOpen(false)}>Profil Saya</Link>
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setShowChallenges(true);
+                    }}
+                    className="block w-full rounded-xl px-4 py-3 text-left text-sm font-bold text-gray-500 hover:bg-emerald-50 hover:text-emerald-700 transition-colors cursor-pointer"
+                  >
+                    Daily Challenges
+                  </button>
                   {userRole === "admin" && (
                     <Link href="/admin" className="rounded-xl px-4 py-3 text-sm font-bold text-emerald-600" onClick={() => setMobileMenuOpen(false)}>Admin Dashboard</Link>
                   )}
@@ -285,6 +328,12 @@ const Navbar: React.FC = () => {
           </div>
         </div>
       </nav>
+      {isAuthenticated && (
+        <DailyChallenges
+          isOpen={showChallenges}
+          onClose={() => setShowChallenges(false)}
+        />
+      )}
     </>
   );
 };

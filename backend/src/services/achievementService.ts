@@ -11,6 +11,7 @@ export const evaluateUserAchievements = async (userId: string) => {
       where: { user_id: userId },
       select: {
         total_poin: true,
+        current_login_streak: true,
       },
     });
 
@@ -20,7 +21,15 @@ export const evaluateUserAchievements = async (userId: string) => {
     const totalReports = await prisma.waste_reports.count({
       where: {
         user_id: userId,
-        status_validasi: "verified", // Assume badges count verified reports
+        status_validasi: "approved", // Fixed bug: was "verified"
+      },
+    });
+
+    // Get total completed daily challenges
+    const totalCompletedChallenges = await prisma.user_daily_challenges.count({
+      where: {
+        user_id: userId,
+        is_completed: true,
       },
     });
 
@@ -52,9 +61,15 @@ export const evaluateUserAchievements = async (userId: string) => {
           if (Number(user.total_poin) >= nilaiSyarat) isEligible = true;
           break;
         case "TOTAL_REPORT":
+        case "TOTAL_LAPORAN":
           if (totalReports >= nilaiSyarat) isEligible = true;
           break;
-        // You can easily add STREAK_HARI etc. here when streak tracking is implemented
+        case "LOGIN_STREAK":
+          if (user.current_login_streak >= nilaiSyarat) isEligible = true;
+          break;
+        case "CHALLENGE_SELESAI":
+          if (totalCompletedChallenges >= nilaiSyarat) isEligible = true;
+          break;
       }
 
       if (isEligible) {

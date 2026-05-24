@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { getBearerToken, getStoredAuth, updateStoredPoints } from "@/lib/auth";
 import { Skeleton } from "@/components/ui/skeleton";
 import DailyChallenges from "@/components/dashboard/DailyChallenges";
+import BonusModal from "@/components/shared/BonusModal";
 import { getAvatarUrl } from "@/components/dashboard/EditProfileModal";
 import {
   Zap,
@@ -88,6 +89,8 @@ export default function BerandaPage() {
   const [loading, setLoading] = useState(true);
   const [showChallengesModal, setShowChallengesModal] = useState(false);
   const [claimingId, setClaimingId] = useState<string | null>(null);
+  const [showBonusModal, setShowBonusModal] = useState(false);
+  const [earnedBonusAmount, setEarnedBonusAmount] = useState(0);
 
   const handleClaim = async (challengeOfTheDayId: string) => {
     const auth = getStoredAuth();
@@ -106,7 +109,12 @@ export default function BerandaPage() {
         const result = await res.json();
         updateStoredPoints(result.data.total_poin);
         // Refresh all data to get updated level and challenges
-        fetchAll();
+        await fetchAll();
+
+        if (result.data.bonus_awarded) {
+          setEarnedBonusAmount(result.data.bonus_didapat ?? 0);
+          setShowBonusModal(true);
+        }
       }
     } catch (e) {
       console.error("Claim error:", e);
@@ -329,8 +337,8 @@ export default function BerandaPage() {
         )}
       </div>
 
-      {/* ── Main Content Grid ──────────────────────── */}
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_360px]">
+      {/* ── Main Content Layout ────────────────────── */}
+      <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-[1fr_350px]">
         {/* Left Column */}
         <div className="flex flex-col gap-6">
           {/* Daily Challenges */}
@@ -448,7 +456,7 @@ export default function BerandaPage() {
 
           {/* Weekly Activity */}
           <div
-            className="rounded-[28px] bg-white p-6 shadow-sm"
+            className="rounded-[28px] bg-white p-6 shadow-sm flex flex-col flex-1"
             style={{ outline: "1px #ECFDF5 solid", outlineOffset: "-1px" }}
           >
             <div className="flex items-center justify-between mb-5">
@@ -471,8 +479,8 @@ export default function BerandaPage() {
               </span>
             </div>
             <div
-              className="flex items-end justify-between gap-2 px-2"
-              style={{ height: "160px" }}
+              className="flex flex-1 items-end justify-around gap-2 px-2"
+              style={{ minHeight: "160px" }}
             >
               {weeklyActivity.map((w) => {
                 const maxVal = Math.max(
@@ -486,7 +494,7 @@ export default function BerandaPage() {
                     className="flex flex-1 flex-col items-center gap-2"
                   >
                     <div
-                      className="relative w-full max-w-[40px]"
+                      className="relative w-full max-w-[48px] bg-slate-50 rounded-t-xl overflow-hidden"
                       style={{ height: "120px" }}
                     >
                       <div
@@ -677,6 +685,13 @@ export default function BerandaPage() {
       <DailyChallenges
         isOpen={showChallengesModal}
         onClose={() => setShowChallengesModal(false)}
+      />
+
+      {/* Bonus Modal */}
+      <BonusModal
+        isOpen={showBonusModal}
+        onClose={() => setShowBonusModal(false)}
+        bonusAmount={earnedBonusAmount}
       />
     </div>
   );

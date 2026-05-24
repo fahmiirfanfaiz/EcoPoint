@@ -92,6 +92,9 @@ export default function EditProfileModal({ isOpen, onClose, user, onSuccess }: E
     };
   }, [isOpen]);
 
+  // We use JSON stringify to avoid resetting form on object reference changes
+  const userString = JSON.stringify(user);
+
   useEffect(() => {
     if (user && isOpen) {
       setForm({
@@ -105,7 +108,7 @@ export default function EditProfileModal({ isOpen, onClose, user, onSuccess }: E
       setError(null);
       setShowConfirm(false);
     }
-  }, [user, isOpen]);
+  }, [userString, isOpen]);
 
   if (!isOpen || !user) return null;
 
