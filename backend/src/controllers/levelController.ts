@@ -2,11 +2,19 @@ import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { AuthRequest } from "../middleware/auth.js";
 
+const getParamId = (value: string | string[] | undefined) => {
+  if (Array.isArray(value)) return value[0];
+  return value;
+};
+
 /**
  * GET /api/levels
  * Public — returns all levels sorted by level_number ascending.
  */
-export const getLevels = async (_req: Request, res: Response): Promise<void> => {
+export const getLevels = async (
+  _req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const levels = await prisma.levels.findMany({
       orderBy: { level_number: "asc" },
@@ -31,12 +39,19 @@ export const getLevels = async (_req: Request, res: Response): Promise<void> => 
  * POST /api/levels/admin
  * Admin-only — create a new level.
  */
-export const createLevel = async (req: AuthRequest, res: Response): Promise<void> => {
+export const createLevel = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const { level_number, nama_level, syarat_poin } = req.body;
 
     if (level_number == null || !nama_level || syarat_poin == null) {
-      res.status(400).json({ message: "level_number, nama_level, dan syarat_poin wajib diisi" });
+      res
+        .status(400)
+        .json({
+          message: "level_number, nama_level, dan syarat_poin wajib diisi",
+        });
       return;
     }
 
@@ -74,9 +89,16 @@ export const createLevel = async (req: AuthRequest, res: Response): Promise<void
  * PUT /api/levels/admin/:id
  * Admin-only — update a level.
  */
-export const updateLevel = async (req: AuthRequest, res: Response): Promise<void> => {
+export const updateLevel = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = getParamId(req.params.id);
+    if (!id) {
+      res.status(400).json({ message: "Invalid level id" });
+      return;
+    }
     const { level_number, nama_level, syarat_poin } = req.body;
 
     const existing = await prisma.levels.findUnique({
@@ -114,9 +136,16 @@ export const updateLevel = async (req: AuthRequest, res: Response): Promise<void
  * DELETE /api/levels/admin/:id
  * Admin-only — delete a level.
  */
-export const deleteLevel = async (req: AuthRequest, res: Response): Promise<void> => {
+export const deleteLevel = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = getParamId(req.params.id);
+    if (!id) {
+      res.status(400).json({ message: "Invalid level id" });
+      return;
+    }
 
     const existing = await prisma.levels.findUnique({
       where: { level_id: id },

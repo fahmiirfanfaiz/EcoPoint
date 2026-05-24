@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
-import { prisma } from "./authController";
+import { prisma } from "../lib/prisma.js";
 import webpush from "web-push";
 
 webpush.setVapidDetails(
-  'mailto:your-email@gmail.com',
+  "mailto:your-email@gmail.com",
   process.env.VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
+  process.env.VAPID_PRIVATE_KEY!,
 );
 
 export const subscribe = async (req: Request, res: Response): Promise<void> => {
@@ -22,8 +22,8 @@ export const subscribe = async (req: Request, res: Response): Promise<void> => {
         p256dh: subscription.keys.p256dh,
         auth: subscription.keys.auth,
         device,
-        pesan: subscription.message || "Push notification"
-      }
+        pesan: subscription.message || "Push notification",
+      },
     });
 
     res.status(201).json({ message: "Subscription saved!" });
