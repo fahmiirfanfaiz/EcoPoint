@@ -184,37 +184,37 @@ export default function LeaderboardKampus() {
         {loading ? (
           <div className="flex flex-col gap-8 w-full">
             {/* Podium Skeleton */}
-            <div className="grid grid-cols-3 gap-3 items-end mt-4">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 items-end mt-4">
               <div className="flex flex-col items-center gap-2">
-                <Skeleton className="h-16 w-16 rounded-full" />
-                <Skeleton className="h-28 w-full rounded-2xl" />
+                <Skeleton className="h-14 w-14 sm:h-16 sm:w-16 rounded-full" />
+                <Skeleton className="h-24 sm:h-28 w-full rounded-2xl" />
               </div>
               <div className="flex flex-col items-center gap-2">
-                <Skeleton className="h-20 w-20 rounded-full" />
-                <Skeleton className="h-32 w-full rounded-2xl" />
+                <Skeleton className="h-16 w-16 sm:h-20 sm:w-20 rounded-full" />
+                <Skeleton className="h-28 sm:h-32 w-full rounded-2xl" />
               </div>
               <div className="flex flex-col items-center gap-2">
-                <Skeleton className="h-16 w-16 rounded-full" />
-                <Skeleton className="h-28 w-full rounded-2xl" />
+                <Skeleton className="h-14 w-14 sm:h-16 sm:w-16 rounded-full" />
+                <Skeleton className="h-24 sm:h-28 w-full rounded-2xl" />
               </div>
             </div>
             
             {/* Table Skeleton */}
             <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-              <div className="grid grid-cols-[48px_1fr_1fr_90px] p-3 border-b border-slate-100">
-                <Skeleton className="h-4 w-8 rounded" />
+              <div className="grid grid-cols-[40px_1fr_75px] sm:grid-cols-[48px_1fr_1fr_90px] p-3 border-b border-slate-100">
+                <Skeleton className="h-4 w-6 rounded" />
                 <Skeleton className="h-4 w-20 rounded" />
-                <Skeleton className="h-4 w-20 rounded" />
+                <Skeleton className="hidden sm:block h-4 w-20 rounded" />
                 <Skeleton className="h-4 w-12 rounded justify-self-end" />
               </div>
               {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="grid grid-cols-[48px_1fr_1fr_90px] p-4 items-center border-b border-slate-50 last:border-0">
+                <div key={i} className="grid grid-cols-[40px_1fr_75px] sm:grid-cols-[48px_1fr_1fr_90px] p-3 sm:p-4 items-center border-b border-slate-50 last:border-0">
                   <Skeleton className="h-5 w-5 rounded" />
-                  <div className="flex items-center gap-3">
-                    <Skeleton className="h-8 w-8 rounded-full" />
-                    <Skeleton className="h-5 w-32 rounded" />
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <Skeleton className="h-8 w-8 rounded-full flex-shrink-0" />
+                    <Skeleton className="h-5 w-24 sm:w-32 rounded" />
                   </div>
-                  <Skeleton className="h-5 w-24 rounded" />
+                  <Skeleton className="hidden sm:block h-5 w-24 rounded" />
                   <Skeleton className="h-6 w-16 rounded justify-self-end" />
                 </div>
               ))}
@@ -224,10 +224,7 @@ export default function LeaderboardKampus() {
           <>
             {/* ── Podium Top 3 ── */}
             {topPlayers.length > 0 && (
-              <div
-                className="grid"
-                style={{ gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", alignItems: "end" }}
-              >
+              <div className="grid grid-cols-3 gap-2 sm:gap-3 items-end">
                 {podiumOrder.map((rank) => {
                   const player = topPlayers.find((p) => p.rank === rank);
                   if (!player) return <div key={rank} />; // Empty slot if < 3 players
@@ -295,15 +292,12 @@ export default function LeaderboardKampus() {
 
                       {/* Card */}
                       <div
+                        className="w-full relative text-center rounded-2xl sm:rounded-2xl"
                         style={{
-                          width: "100%",
                           background: cfg.bg,
                           border: `1.5px solid ${cfg.border}`,
-                          borderRadius: 16,
-                          padding: is1st ? "16px 12px 14px" : "12px 10px",
-                          textAlign: "center",
+                          padding: is1st ? "16px 8px 14px" : "12px 6px",
                           boxShadow: `0 2px 10px ${cfg.shadow}`,
-                          position: "relative",
                         }}
                       >
                         {/* Sparkle dots for 1st */}
@@ -360,24 +354,11 @@ export default function LeaderboardKampus() {
                 }}
               >
                 {/* Table header */}
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "48px 1fr 1fr 90px",
-                    padding: "12px 20px",
-                    borderBottom: "1px solid #f1f5f9",
-                  }}
-                >
+                <div className="grid grid-cols-[40px_1fr_75px] sm:grid-cols-[48px_1fr_1fr_90px] px-3 sm:px-5 py-3 border-b border-slate-100">
                   {["RANK", "STUDENT", "FAKULTAS", "POINTS"].map((h) => (
                     <span
                       key={h}
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 800,
-                        color: "#94a3b8",
-                        letterSpacing: "0.08em",
-                        textAlign: h === "POINTS" ? "right" : "left",
-                      }}
+                      className={`text-[10px] font-extrabold text-slate-400 tracking-wider ${h === "POINTS" ? "text-right" : "text-left"} ${h === "FAKULTAS" ? "hidden sm:block" : ""}`}
                     >
                       {h}
                     </span>
@@ -388,46 +369,34 @@ export default function LeaderboardKampus() {
                 {tablePlayers.map((player, i) => (
                   <div
                     key={player.rank}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "48px 1fr 1fr 90px",
-                      padding: "14px 20px",
-                      alignItems: "center",
-                      borderBottom: i < tablePlayers.length - 1 ? "1px solid #f8fafc" : "none",
-                      transition: "background 0.15s",
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fffe")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                    className="grid grid-cols-[40px_1fr_75px] sm:grid-cols-[48px_1fr_1fr_90px] px-3 sm:px-5 py-3 sm:py-3.5 items-center border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors"
                   >
                     {/* Rank */}
-                    <span style={{ fontWeight: 800, color: "#475569", fontSize: 14 }}>
+                    <span className="font-extrabold text-slate-600 text-sm">
                       {player.rank}
                     </span>
 
                     {/* Student */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 pr-2">
                       <Avatar initials="" bg="#f8fafc" size={34} fontSize={11} src={getAvatarUrl({ nama: player.nama } as any, player.profile_pic)} />
-                      <span style={{ fontWeight: 700, color: "#0f172a", fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={player.nama}>
-                        {player.nama}
-                      </span>
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-bold text-slate-900 text-sm whitespace-nowrap overflow-hidden text-ellipsis" title={player.nama}>
+                          {player.nama}
+                        </span>
+                        <span className="text-slate-500 text-[11px] sm:hidden whitespace-nowrap overflow-hidden text-ellipsis" title={player.fakultas}>
+                          {player.fakultas}
+                        </span>
+                      </div>
                     </div>
 
-                    {/* Fakultas */}
-                    <span style={{ color: "#64748b", fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", paddingRight: "10px" }} title={player.fakultas}>{player.fakultas}</span>
+                    {/* Fakultas (Desktop only) */}
+                    <span className="hidden sm:block text-slate-500 text-[13px] whitespace-nowrap overflow-hidden text-ellipsis pr-2" title={player.fakultas}>
+                      {player.fakultas}
+                    </span>
 
                     {/* Points */}
-                    <div style={{ textAlign: "right" }}>
-                      <span
-                        style={{
-                          display: "inline-block",
-                          background: "#f1f5f9",
-                          borderRadius: 8,
-                          padding: "3px 10px",
-                          fontSize: 13,
-                          fontWeight: 700,
-                          color: "#334155",
-                        }}
-                      >
+                    <div className="text-right">
+                      <span className="inline-block bg-slate-100 rounded-lg px-2 sm:px-2.5 py-1 text-[11px] sm:text-[13px] font-bold text-slate-700 whitespace-nowrap">
                         {player.total_poin.toLocaleString("id-ID")} pts
                       </span>
                     </div>
