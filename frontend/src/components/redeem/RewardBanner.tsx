@@ -2,16 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { getStoredAuth } from "@/lib/auth";
+import { ArrowDown } from "lucide-react";
 
 interface RewardsStoreBannerProps {
   balance?: number;
 }
 
-export default function RewardsStoreBanner({ balance }: RewardsStoreBannerProps) {
-  const [currentBalance, setCurrentBalance] = useState<number>(() => {
-    if (typeof balance === "number") return balance;
-    return getStoredAuth()?.user.total_poin ?? 0;
-  });
+export default function RewardsStoreBanner({
+  balance,
+}: RewardsStoreBannerProps) {
+  const [currentBalance, setCurrentBalance] = useState<number>(
+    typeof balance === "number" ? balance : 0,
+  );
 
   useEffect(() => {
     const syncBalance = () => {
@@ -21,7 +23,8 @@ export default function RewardsStoreBanner({ balance }: RewardsStoreBannerProps)
 
     syncBalance();
     window.addEventListener("ecopoint-auth-changed", syncBalance);
-    return () => window.removeEventListener("ecopoint-auth-changed", syncBalance);
+    return () =>
+      window.removeEventListener("ecopoint-auth-changed", syncBalance);
   }, [balance]);
 
   return (
@@ -29,7 +32,8 @@ export default function RewardsStoreBanner({ balance }: RewardsStoreBannerProps)
       <div
         className="relative flex items-center justify-between gap-4 rounded-2xl px-8 py-7 overflow-hidden"
         style={{
-          background: "linear-gradient(135deg, #34d399 0%, #10b981 40%, #059669 100%)",
+          background:
+            "linear-gradient(135deg, #34d399 0%, #10b981 40%, #059669 100%)",
           boxShadow: "0 8px 32px rgba(16,185,129,0.35)",
           minHeight: 110,
         }}
@@ -85,6 +89,20 @@ export default function RewardsStoreBanner({ balance }: RewardsStoreBannerProps)
           >
             Redeem your hard-earned points for exclusive campus perks.
           </p>
+
+          <button
+            type="button"
+            onClick={() => {
+              document.getElementById("reward-catalog")?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+            }}
+            className="mt-4 inline-flex w-fit items-center gap-2 rounded-full border border-white/30 bg-white/15 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-white/20"
+          >
+            <ArrowDown size={14} />
+            Lihat reward
+          </button>
         </div>
 
         {/* ── Right: Balance card ── */}
@@ -133,7 +151,12 @@ export default function RewardsStoreBanner({ balance }: RewardsStoreBannerProps)
                 stroke="#15803d"
                 strokeWidth="0.5"
               />
-              <path d="M12 15v-4" stroke="#15803d" strokeWidth="1" strokeLinecap="round" />
+              <path
+                d="M12 15v-4"
+                stroke="#15803d"
+                strokeWidth="1"
+                strokeLinecap="round"
+              />
             </svg>
 
             <span

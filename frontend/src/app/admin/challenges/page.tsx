@@ -19,9 +19,10 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { API_BASE_URL } from "@/lib/auth";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 
-const API = "https://api-ecopoint.vercel.app/api/daily-challenges";
+const API = `${API_BASE_URL}/daily-challenges`;
 
 const CHALLENGE_TYPES = [
   {

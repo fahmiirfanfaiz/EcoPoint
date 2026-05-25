@@ -10,10 +10,8 @@ import WeeklyActivity from "@/components/dashboard/WeeklyActivity";
 import RecentAchievements from "@/components/dashboard/RecentAchievements";
 import RecentUpdates from "@/components/dashboard/RecentUpdates";
 import DailyChallenges from "@/components/dashboard/DailyChallenges";
-import { Calendar } from "lucide-react";
 
-const API =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://api-ecopoint.vercel.app/api";
+const API = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api";
 
 interface DashboardData {
   stats: {

@@ -10,6 +10,12 @@ router.get(
   adminMiddleware,
   rewardsController.getAllRewardsAdmin,
 );
+router.get(
+  "/:id",
+  authMiddleware,
+  adminMiddleware,
+  rewardsController.getRewardAdminDetail,
+);
 router.post(
   "/",
   authMiddleware,

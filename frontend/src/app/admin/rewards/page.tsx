@@ -1,16 +1,26 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { API_BASE_URL, getBearerToken } from "@/lib/auth";
 import {
-  CheckCircle2,
   Edit2,
+  Eye,
   Plus,
   RefreshCw,
   ShieldAlert,
   Trash2,
-  X,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Reward {
   reward_id: string;
@@ -49,12 +59,12 @@ export default function AdminRewards() {
     type: "ok" | "err";
     text: string;
   } | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Reward | null>(null);
   const [form, setForm] = useState<RewardFormState>(emptyForm);
 
   const token = getBearerToken();
 
-  const loadRewards = async () => {
+  const loadRewards = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -84,7 +94,7 @@ export default function AdminRewards() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     void loadRewards();
@@ -95,7 +105,7 @@ export default function AdminRewards() {
 
     window.addEventListener("ecopoint-auth-changed", sync);
     return () => window.removeEventListener("ecopoint-auth-changed", sync);
-  }, []);
+  }, [loadRewards]);
 
   const stats = useMemo(
     () => ({
@@ -111,23 +121,6 @@ export default function AdminRewards() {
     }),
     [rewards],
   );
-
-  const resetForm = () => {
-    setEditingId(null);
-    setForm(emptyForm);
-  };
-
-  const startEdit = (reward: Reward) => {
-    setEditingId(reward.reward_id);
-    setForm({
-      nama_reward: reward.nama_reward,
-      deskripsi: reward.deskripsi,
-      poin_dibutuhkan: reward.poin_dibutuhkan.toString(),
-      stok: reward.stok.toString(),
-      is_active: reward.is_active,
-    });
-    setMessage(null);
-  };
 
   const handleSave = async () => {
     if (!token) {
@@ -167,25 +160,20 @@ export default function AdminRewards() {
     setMessage(null);
 
     try {
-      const response = await fetch(
-        editingId
-          ? `${API_BASE_URL}/admin/rewards/${editingId}`
-          : `${API_BASE_URL}/admin/rewards`,
-        {
-          method: editingId ? "PUT" : "POST",
-          headers: {
-            Authorization: token,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            nama_reward: form.nama_reward.trim(),
-            deskripsi: form.deskripsi.trim(),
-            poin_dibutuhkan: poin,
-            stok,
-            is_active: form.is_active,
-          }),
+      const response = await fetch(`${API_BASE_URL}/admin/rewards`, {
+        method: "POST",
+        headers: {
+          Authorization: token,
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({
+          nama_reward: form.nama_reward.trim(),
+          deskripsi: form.deskripsi.trim(),
+          poin_dibutuhkan: poin,
+          stok,
+          is_active: form.is_active,
+        }),
+      });
 
       const payload = (await response.json().catch(() => null)) as {
         message?: string;
@@ -197,11 +185,9 @@ export default function AdminRewards() {
 
       setMessage({
         type: "ok",
-        text: editingId
-          ? "Reward berhasil diperbarui."
-          : "Reward baru berhasil ditambahkan.",
+        text: "Reward baru berhasil ditambahkan.",
       });
-      resetForm();
+      setForm(emptyForm);
       await loadRewards();
     } catch (err) {
       setMessage({
@@ -213,23 +199,26 @@ export default function AdminRewards() {
     }
   };
 
-  const handleDelete = async (reward: Reward) => {
+  const confirmDelete = (reward: Reward) => {
+    setDeleteTarget(reward);
+    setMessage(null);
+  };
+
+  const handleDeleteConfirmed = async () => {
+    if (!deleteTarget) return;
+
     if (!token) {
       setMessage({ type: "err", text: "Silakan login ulang sebagai admin." });
+      setDeleteTarget(null);
       return;
     }
-
-    const confirmed = window.confirm(
-      `Hapus reward ${reward.nama_reward}? Jika sudah pernah diredeem, sistem akan menonaktifkannya.`,
-    );
-    if (!confirmed) return;
 
     setSaving(true);
     setMessage(null);
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/admin/rewards/${reward.reward_id}`,
+        `${API_BASE_URL}/admin/rewards/${deleteTarget.reward_id}`,
         {
           method: "DELETE",
           headers: { Authorization: token },
@@ -248,7 +237,7 @@ export default function AdminRewards() {
         type: "ok",
         text: payload?.message ?? "Reward berhasil diproses.",
       });
-      if (editingId === reward.reward_id) resetForm();
+      setDeleteTarget(null);
       await loadRewards();
     } catch (err) {
       setMessage({
@@ -310,22 +299,12 @@ export default function AdminRewards() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="font-nunito text-xl font-extrabold text-gray-900">
-                {editingId ? "Edit Reward" : "Tambah Reward"}
+                Tambah Reward
               </h2>
               <p className="mt-1 text-sm text-gray-500">
                 Isi detail reward untuk katalog redeem user.
               </p>
             </div>
-            {editingId && (
-              <button
-                type="button"
-                onClick={resetForm}
-                className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-sm font-bold text-gray-600 transition-colors hover:bg-gray-50"
-              >
-                <X size={16} />
-                Batal
-              </button>
-            )}
           </div>
 
           <div className="mt-5 space-y-4">
@@ -414,16 +393,10 @@ export default function AdminRewards() {
             >
               {saving ? (
                 <RefreshCw size={16} className="animate-spin" />
-              ) : editingId ? (
-                <CheckCircle2 size={16} />
               ) : (
                 <Plus size={16} />
               )}
-              {saving
-                ? "Menyimpan..."
-                : editingId
-                  ? "Simpan Perubahan"
-                  : "Tambah Reward"}
+              {saving ? "Menyimpan..." : "Tambah Reward"}
             </button>
           </div>
         </div>
@@ -509,21 +482,27 @@ export default function AdminRewards() {
                         </div>
 
                         <div className="flex shrink-0 items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => startEdit(reward)}
+                          <Link
+                            href={`/admin/rewards/${reward.reward_id}`}
                             className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-50"
+                          >
+                            <Eye size={16} />
+                            Read
+                          </Link>
+                          <Link
+                            href={`/admin/rewards/${reward.reward_id}/edit`}
+                            className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-50"
                           >
                             <Edit2 size={16} />
                             Edit
-                          </button>
+                          </Link>
                           <button
                             type="button"
-                            onClick={() => void handleDelete(reward)}
+                            onClick={() => confirmDelete(reward)}
                             className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-white px-3 py-2 text-sm font-bold text-rose-600 transition-colors hover:bg-rose-50"
                           >
                             <Trash2 size={16} />
-                            Hapus
+                            Delete
                           </button>
                         </div>
                       </div>
@@ -535,6 +514,35 @@ export default function AdminRewards() {
           </div>
         </div>
       </div>
+
+      <AlertDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus reward?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget
+                ? `Reward "${deleteTarget.nama_reward}" akan dihapus dari katalog. Jika reward ini sudah pernah diredeem, sistem akan menonaktifkannya instead of deleting permanently.`
+                : "Reward ini akan dihapus dari katalog."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-50">
+              Batal
+              </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => void handleDeleteConfirmed()}
+              className="bg-rose-600 text-white hover:bg-rose-700 rounded-xl w-[6vw]"
+            >
+              {saving ? "Menghapus..." : "Ya, hapus"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -14,63 +14,25 @@ const parseBigIntInput = (value: unknown, fallback: bigint): bigint => {
   return fallback;
 };
 
-const DEFAULT_REWARDS = [
-  {
-    nama_reward: "Voucher Kopi Campus 15K",
-    deskripsi: "Voucher minuman kopi di kantin atau tenant kampus pilihan.",
-    poin_dibutuhkan: 150,
-    stok: 20,
+const serializeReward = (
+  reward: {
+    reward_id: string;
+    nama_reward: string;
+    deskripsi: string;
+    poin_dibutuhkan: bigint;
+    stok: bigint;
+    is_active: boolean;
   },
-  {
-    nama_reward: "Kupon Makan Siang 20K",
-    deskripsi: "Potongan harga untuk paket makan siang di merchant kampus.",
-    poin_dibutuhkan: 250,
-    stok: 15,
-  },
-  {
-    nama_reward: "Voucher Fotokopi 50 Lembar",
-    deskripsi: "Tukar poin untuk voucher fotokopi tugas atau materi kuliah.",
-    poin_dibutuhkan: 100,
-    stok: 30,
-  },
-  {
-    nama_reward: "Tumbler EcoPoint",
-    deskripsi: "Merchandise ramah lingkungan untuk membawa minum harian.",
-    poin_dibutuhkan: 600,
-    stok: 10,
-  },
-  {
-    nama_reward: "Voucher Pulsa/Data 25K",
-    deskripsi: "Berguna untuk kebutuhan internet dan komunikasi mahasiswa.",
-    poin_dibutuhkan: 350,
-    stok: 12,
-  },
-  {
-    nama_reward: "Kupon Snack Sehat",
-    deskripsi: "Ditukar dengan snack ringan di tenant sehat kampus.",
-    poin_dibutuhkan: 180,
-    stok: 18,
-  },
-] as const;
-
-const ensureDefaultRewards = async (): Promise<void> => {
-  const rewardCount = await prisma.rewards.count();
-
-  if (rewardCount > 0) {
-    return;
-  }
-
-  await prisma.rewards.createMany({
-    data: DEFAULT_REWARDS.map((reward) => ({
-      nama_reward: reward.nama_reward,
-      deskripsi: reward.deskripsi,
-      poin_dibutuhkan: BigInt(reward.poin_dibutuhkan),
-      stok: BigInt(reward.stok),
-      is_active: true,
-    })),
-    skipDuplicates: true,
-  });
-};
+  redeemedCount = 0,
+) => ({
+  reward_id: reward.reward_id,
+  nama_reward: reward.nama_reward,
+  deskripsi: reward.deskripsi,
+  poin_dibutuhkan: Number(reward.poin_dibutuhkan),
+  stok: Number(reward.stok),
+  is_active: reward.is_active,
+  redeemed_count: redeemedCount,
+});
 
 /**
  * GET /api/rewards
@@ -81,19 +43,15 @@ export const getRewards = async (
   res: Response,
 ): Promise<void> => {
   try {
-    await ensureDefaultRewards();
-
     const rewards = await prisma.rewards.findMany({
       where: { is_active: true },
       orderBy: { poin_dibutuhkan: "asc" },
     });
 
     res.status(200).json({
-      rewards: rewards.map((r: (typeof rewards)[number]) => ({
-        ...r,
-        poin_dibutuhkan: Number(r.poin_dibutuhkan),
-        stok: Number(r.stok),
-      })),
+      rewards: rewards.map((r: (typeof rewards)[number]) =>
+        serializeReward(r),
+      ),
     });
   } catch (error) {
     console.error("Get rewards error:", error);
@@ -270,8 +228,6 @@ export const getAllRewardsAdmin = async (
   res: Response,
 ): Promise<void> => {
   try {
-    await ensureDefaultRewards();
-
     const rewards = await prisma.rewards.findMany({
       orderBy: [{ is_active: "desc" }, { poin_dibutuhkan: "asc" }],
       include: {
@@ -282,18 +238,53 @@ export const getAllRewardsAdmin = async (
     });
 
     res.status(200).json({
-      rewards: rewards.map((reward: (typeof rewards)[number]) => ({
-        reward_id: reward.reward_id,
-        nama_reward: reward.nama_reward,
-        deskripsi: reward.deskripsi,
-        poin_dibutuhkan: Number(reward.poin_dibutuhkan),
-        stok: Number(reward.stok),
-        is_active: reward.is_active,
-        redeemed_count: reward._count.redemptions,
-      })),
+      rewards: rewards.map((reward: (typeof rewards)[number]) =>
+        serializeReward(reward, reward._count.redemptions),
+      ),
     });
   } catch (error) {
     console.error("Get all rewards admin error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * GET /api/admin/rewards/:id
+ * Admin — returns reward detail including redemption count.
+ */
+export const getRewardAdminDetail = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const rewardId = Array.isArray(req.params.id)
+      ? req.params.id[0]
+      : req.params.id;
+
+    if (!rewardId) {
+      res.status(400).json({ message: "reward_id tidak valid" });
+      return;
+    }
+
+    const reward = await prisma.rewards.findUnique({
+      where: { reward_id: rewardId },
+      include: {
+        _count: {
+          select: { redemptions: true },
+        },
+      },
+    });
+
+    if (!reward) {
+      res.status(404).json({ message: "Reward tidak ditemukan" });
+      return;
+    }
+
+    res.status(200).json({
+      reward: serializeReward(reward, reward._count.redemptions),
+    });
+  } catch (error) {
+    console.error("Get reward admin detail error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -475,6 +466,7 @@ export default {
   redeemReward,
   getRedemptionHistory,
   getAllRewardsAdmin,
+  getRewardAdminDetail,
   createReward,
   updateReward,
   deleteReward,

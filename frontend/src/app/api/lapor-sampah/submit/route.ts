@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { isSupabaseAdminConfigured, supabaseAdmin } from "@/lib/supabase";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const BACKEND_API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://api-ecopoint.vercel.app/api";
 const STORAGE_BUCKET = "AI-Service";
 
 export const runtime = "nodejs";
@@ -261,17 +263,14 @@ export async function POST(request: Request) {
 
     // Call backend to track daily challenge progress for "waste_report"
     try {
-      await fetch(
-        "https://api-ecopoint.vercel.app/api/daily-challenges/track-action",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authorization.replace(/^Bearer\s+/i, "").trim()}`,
-          },
-          body: JSON.stringify({ action: "waste_report" }),
+      await fetch(`${BACKEND_API_BASE_URL}/daily-challenges/track-action`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authorization.replace(/^Bearer\s+/i, "").trim()}`,
         },
-      );
+        body: JSON.stringify({ action: "waste_report" }),
+      });
     } catch (e) {
       console.error("Failed to track waste_report action:", e);
       // Non-fatal, continue

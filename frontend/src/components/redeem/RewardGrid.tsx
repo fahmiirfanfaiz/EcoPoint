@@ -16,6 +16,16 @@ import {
   updateStoredPoints,
 } from "@/lib/auth";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type SortOption =
   | "Rekomendasi"
@@ -67,6 +77,16 @@ function RewardCard({
   redeeming: boolean;
 }) {
   const affordable = userPoints >= reward.poin_dibutuhkan;
+  const canRedeem = reward.is_active && reward.stok > 0 && affordable;
+  const buttonLabel = redeeming
+    ? "Menukar..."
+    : !reward.is_active
+      ? "Nonaktif"
+      : reward.stok <= 0
+        ? "Stok Habis"
+        : affordable
+          ? "Tukar Poin"
+          : "Poin Kurang";
 
   return (
     <div className="group overflow-hidden rounded-3xl border border-white/70 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.08)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(15,23,42,0.12)]">
@@ -138,39 +158,29 @@ function RewardCard({
 
         <button
           type="button"
-          disabled={
-            !reward.is_active || reward.stok <= 0 || !affordable || redeeming
-          }
+          disabled={redeeming || !canRedeem}
           onClick={() => onRedeem(reward)}
-          className={`inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-black transition-all duration-200 ${
-            !reward.is_active || reward.stok <= 0 || !affordable || redeeming
-              ? "cursor-not-allowed bg-slate-200 text-slate-500"
-              : "bg-emerald-500 text-white shadow-[0_10px_24px_rgba(16,185,129,0.28)] hover:bg-emerald-600 hover:shadow-[0_12px_28px_rgba(16,185,129,0.36)]"
-          }`}
+          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-black text-white shadow-[0_10px_24px_rgba(16,185,129,0.28)] transition-all duration-200 hover:bg-emerald-600 hover:shadow-[0_12px_28px_rgba(16,185,129,0.36)] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none disabled:hover:bg-slate-300 disabled:hover:shadow-none"
         >
           {redeeming ? (
             <>
               <Loader2 size={16} className="animate-spin" />
               Menukar...
             </>
-          ) : !reward.is_active || reward.stok <= 0 ? (
-            <>
-              <ShieldAlert size={16} />
-              Tidak tersedia
-            </>
-          ) : affordable ? (
-            <>
-              <Gift size={16} />
-              Tukar Poin
-            </>
           ) : (
             <>
-              <Sparkles size={16} />
-              Butuh {formatPoints(reward.poin_dibutuhkan - userPoints)} poin
-              lagi
+              <Gift size={16} />
+              {buttonLabel}
             </>
           )}
         </button>
+
+        {reward.is_active && reward.stok > 0 && !affordable && !redeeming ? (
+          <p className="-mt-1 text-center text-xs font-semibold text-amber-600">
+            Butuh {formatPoints(reward.poin_dibutuhkan - userPoints)} poin lagi
+            untuk menukar.
+          </p>
+        ) : null}
       </div>
     </div>
   );
@@ -180,12 +190,12 @@ export default function RewardsGrid() {
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
   const [filter, setFilter] = useState<FilterOption>("Semua");
   const [sort, setSort] = useState<SortOption>("Rekomendasi");
-  const [userPoints, setUserPoints] = useState<number>(
-    () => getStoredAuth()?.user.total_poin ?? 0,
-  );
+  const [userPoints, setUserPoints] = useState<number>(0);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
+  const [pendingReward, setPendingReward] = useState<Reward | null>(null);
   const [message, setMessage] = useState<{
     type: "ok" | "err";
     text: string;
@@ -214,14 +224,55 @@ export default function RewardsGrid() {
     }
   };
 
+  const syncCurrentPoints = async () => {
+    const auth = getStoredAuth();
+    const token = getBearerToken();
+
+    if (!auth?.user?.user_id || !token) {
+      setUserPoints(auth?.user?.total_poin ?? 0);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+        headers: { Authorization: token },
+      });
+
+      if (!response.ok) {
+        const cached = getStoredAuth()?.user?.total_poin;
+        if (typeof cached === "number") {
+          setUserPoints(cached);
+        }
+        return;
+      }
+
+      const payload = (await response.json().catch(() => null)) as {
+        user?: { total_poin?: number };
+      } | null;
+
+      const latestPoints = payload?.user?.total_poin;
+      if (typeof latestPoints === "number" && Number.isFinite(latestPoints)) {
+        setUserPoints(latestPoints);
+        updateStoredPoints(latestPoints);
+      }
+    } catch {
+      const fallback = getStoredAuth()?.user?.total_poin;
+      if (typeof fallback === "number") {
+        setUserPoints(fallback);
+      }
+    }
+  };
+
   useEffect(() => {
+    setIsHydrated(true);
+
+    const cached = getStoredAuth()?.user?.total_poin;
+    if (typeof cached === "number") setUserPoints(cached);
+
     void loadRewards();
+    void syncCurrentPoints();
 
-    const syncAuth = () => {
-      setUserPoints(getStoredAuth()?.user.total_poin ?? 0);
-    };
-
-    syncAuth();
+    const syncAuth = () => void syncCurrentPoints();
     window.addEventListener("ecopoint-auth-changed", syncAuth);
     return () => window.removeEventListener("ecopoint-auth-changed", syncAuth);
   }, []);
@@ -268,7 +319,7 @@ export default function RewardsGrid() {
       userPoints >= reward.poin_dibutuhkan,
   ).length;
 
-  const handleRedeem = async (reward: Reward) => {
+  const requestRedeem = (reward: Reward) => {
     const auth = getStoredAuth();
     const token = getBearerToken();
 
@@ -288,16 +339,24 @@ export default function RewardsGrid() {
       return;
     }
 
-    if (
-      !window.confirm(
-        `Tukar ${formatPoints(reward.poin_dibutuhkan)} poin untuk ${reward.nama_reward}?`,
-      )
-    ) {
+    setPendingReward(reward);
+    setMessage(null);
+  };
+
+  const executeRedeem = async (reward: Reward) => {
+    const token = getBearerToken();
+
+    if (!token) {
+      setMessage({
+        type: "err",
+        text: "Silakan login ulang untuk menukar reward.",
+      });
       return;
     }
 
     setRedeemingId(reward.reward_id);
     setMessage(null);
+    setPendingReward(null);
 
     try {
       const response = await fetch(`${API_BASE_URL}/rewards/redeem`, {
@@ -339,7 +398,7 @@ export default function RewardsGrid() {
   };
 
   return (
-    <div className="font-nunito w-full space-y-6">
+    <div id="reward-catalog" className="font-nunito w-full space-y-6">
       <div className="grid gap-4 rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_12px_36px_rgba(15,23,42,0.08)] lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
         <div>
           <p className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-black uppercase tracking-[0.22em] text-emerald-700">
@@ -353,6 +412,7 @@ export default function RewardsGrid() {
             Reward akan otomatis berkurang stoknya saat ditukar, dan saldo poin
             kamu akan turun secara atomik melalui backend.
           </p>
+    
         </div>
 
         <div className="grid grid-cols-2 gap-3 rounded-[22px] bg-slate-50 p-4">
@@ -437,7 +497,7 @@ export default function RewardsGrid() {
         </div>
       </div>
 
-      {loading ? (
+      {!isHydrated || loading ? (
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 6 }).map((_, index) => (
             <div
@@ -474,7 +534,7 @@ export default function RewardsGrid() {
               key={reward.reward_id}
               reward={reward}
               userPoints={userPoints}
-              onRedeem={handleRedeem}
+              onRedeem={requestRedeem}
               redeeming={redeemingId === reward.reward_id}
             />
           ))}
@@ -490,6 +550,37 @@ export default function RewardsGrid() {
           </p>
         </div>
       )}
+
+      <AlertDialog
+        open={Boolean(pendingReward)}
+        onOpenChange={(open) => {
+          if (!open) setPendingReward(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Konfirmasi penukaran poin</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingReward
+                ? `Tukar ${formatPoints(pendingReward.poin_dibutuhkan)} poin untuk "${pendingReward.nama_reward}"? Jika Anda menekan Ya, reward akan langsung diproses dan stok berkurang.`
+                : "Konfirmasi penukaran reward ini."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingReward) {
+                  void executeRedeem(pendingReward);
+                }
+              }}
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
+            >
+              Ya, tukar poin
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -17,9 +17,10 @@ import {
   Zap,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { API_BASE_URL } from "@/lib/auth";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 
-const API = "https://api-ecopoint.vercel.app/api/badges";
+const API = `${API_BASE_URL}/badges`;
 
 const JENIS_SYARAT = [
   {

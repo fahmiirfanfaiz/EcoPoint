@@ -12,9 +12,10 @@ import {
   Star,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { API_BASE_URL } from "@/lib/auth";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 
-const API = "https://api-ecopoint.vercel.app/api/levels";
+const API = `${API_BASE_URL}/levels`;
 
 interface Level {
   level_id: string;
