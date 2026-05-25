@@ -1,7 +1,25 @@
 "use client";
 
-import React from "react";
-import { Users, Target, CheckCircle, TrendingUp } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Bell, Circle, CheckCircle, Target, TrendingUp, Users } from "lucide-react";
+import { API_BASE_URL, getBearerToken } from "@/lib/auth";
+
+interface RecentUpdate {
+  notifications_id: string;
+  pesan: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+const formatAdminTime = (value: string) => {
+  const date = new Date(value);
+  return date.toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
 export default function AdminDashboard() {
   const stats = [
@@ -39,6 +57,49 @@ export default function AdminDashboard() {
     },
   ];
 
+  const [recentUpdates, setRecentUpdates] = useState<RecentUpdate[]>([]);
+  const [isLoadingUpdates, setIsLoadingUpdates] = useState(true);
+  const [updatesError, setUpdatesError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadRecentUpdates = async () => {
+      setIsLoadingUpdates(true);
+      setUpdatesError(null);
+
+      try {
+        const token = getBearerToken();
+        if (!token) {
+          throw new Error("Silakan login ulang sebagai admin.");
+        }
+
+        const response = await fetch(`${API_BASE_URL}/dashboard`, {
+          headers: { Authorization: token },
+        });
+
+        if (!response.ok) {
+          const fallbackText = await response.text();
+          throw new Error(fallbackText || "Gagal memuat recent updates");
+        }
+
+        const payload: { recent_updates?: RecentUpdate[] } = await response.json();
+        setRecentUpdates(payload.recent_updates ?? []);
+      } catch (error) {
+        setUpdatesError(
+          error instanceof Error ? error.message : "Gagal memuat recent updates",
+        );
+      } finally {
+        setIsLoadingUpdates(false);
+      }
+    };
+
+    void loadRecentUpdates();
+  }, []);
+
+  const unreadCount = useMemo(
+    () => recentUpdates.filter((update) => !update.is_read).length,
+    [recentUpdates],
+  );
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
@@ -46,7 +107,6 @@ export default function AdminDashboard() {
         <p className="mt-1 text-gray-500 font-quicksand">Welcome back, Admin. Here's what's happening today.</p>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, idx) => {
           const Icon = stat.icon;
@@ -76,43 +136,74 @@ export default function AdminDashboard() {
         })}
       </div>
 
-      {/* Recent Activity Table (Mock) */}
       <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-        <div className="border-b border-gray-100 px-6 py-5">
-          <h2 className="font-nunito text-lg font-bold text-gray-900">Recent Activity</h2>
+        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
+          <div>
+            <h2 className="font-nunito text-lg font-bold text-gray-900">Recent Updates</h2>
+            <p className="mt-1 font-quicksand text-sm text-gray-500">Notifikasi terbaru dari aktivitas pengguna.</p>
+          </div>
+          <div className="flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700">
+            <Bell size={14} />
+            {unreadCount} unread
+          </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left font-quicksand">
-            <thead className="bg-gray-50 text-sm font-semibold text-gray-500">
-              <tr>
-                <th className="px-6 py-4">User</th>
-                <th className="px-6 py-4">Action</th>
-                <th className="px-6 py-4">Points</th>
-                <th className="px-6 py-4">Time</th>
-                <th className="px-6 py-4">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 text-sm text-gray-700">
-              {[1, 2, 3, 4, 5].map((item) => (
-                <tr key={item} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 font-medium text-gray-900">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-emerald-400 to-teal-500"></div>
-                      <span>User {item}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">Completed Daily Challenge</td>
-                  <td className="px-6 py-4 font-bold text-emerald-600">+50</td>
-                  <td className="px-6 py-4 text-gray-500">10 mins ago</td>
-                  <td className="px-6 py-4">
-                    <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
-                      Success
-                    </span>
-                  </td>
-                </tr>
+
+        <div className="p-6">
+          {isLoadingUpdates ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((item) => (
+                <div key={item} className="flex items-start gap-4 rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                  <div className="h-10 w-10 rounded-full bg-gray-200 animate-pulse" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-2/3 rounded bg-gray-200 animate-pulse" />
+                    <div className="h-3 w-1/3 rounded bg-gray-100 animate-pulse" />
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          ) : updatesError ? (
+            <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {updatesError}
+            </div>
+          ) : recentUpdates.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-6 py-10 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white text-gray-400 shadow-sm">
+                <Bell size={20} />
+              </div>
+              <p className="mt-4 font-nunito text-base font-bold text-gray-900">Belum ada recent updates</p>
+              <p className="mt-1 font-quicksand text-sm text-gray-500">
+                Notifikasi aktivitas pengguna akan muncul di sini.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {recentUpdates.map((update) => (
+                <div
+                  key={update.notifications_id}
+                  className={`flex items-start gap-4 rounded-2xl border p-4 transition-colors ${update.is_read ? "border-gray-100 bg-white" : "border-emerald-100 bg-emerald-50/60"}`}
+                >
+                  <div className={`mt-0.5 flex h-10 w-10 items-center justify-center rounded-full ${update.is_read ? "bg-gray-100 text-gray-500" : "bg-emerald-100 text-emerald-700"}`}>
+                    {update.is_read ? <Circle size={14} /> : <CheckCircle size={14} />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="font-quicksand text-sm font-semibold text-gray-900">
+                        {update.pesan}
+                      </p>
+                      {!update.is_read && (
+                        <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-700">
+                          Baru
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 font-quicksand text-xs text-gray-500">
+                      {formatAdminTime(update.created_at)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -1,13 +1,37 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { clearStoredAuth, getStoredAuth, AuthUser } from "@/lib/auth";
+import {
+  clearStoredAuth,
+  getStoredAuth,
+  AuthUser,
+  API_BASE_URL,
+  getBearerToken,
+} from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { getAvatarUrl } from "@/components/dashboard/EditProfileModal";
 import DailyChallenges from "@/components/dashboard/DailyChallenges";
+import { Bell, CheckCircle2, ChevronDown, Circle } from "lucide-react";
+
+interface RecentUpdate {
+  notifications_id: string;
+  pesan: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+const formatNotificationTime = (value: string) => {
+  const date = new Date(value);
+  return date.toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
 const navLinks = [
   { label: "Beranda", href: "/dashboard" },
@@ -42,7 +66,10 @@ const Navbar: React.FC = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userObj, setUserObj] = useState<AuthUser | null>(null);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [updatesDropdownOpen, setUpdatesDropdownOpen] = useState(false);
   const [showChallenges, setShowChallenges] = useState(false);
+  const [recentUpdates, setRecentUpdates] = useState<RecentUpdate[]>([]);
+  const [updatesLoading, setUpdatesLoading] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -100,10 +127,42 @@ const Navbar: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const loadRecentUpdates = async () => {
+      const token = getBearerToken();
+      if (!token || !isAuthenticated) {
+        setRecentUpdates([]);
+        return;
+      }
+
+      setUpdatesLoading(true);
+      try {
+        const response = await fetch(`${API_BASE_URL}/dashboard`, {
+          headers: { Authorization: token },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to load recent updates");
+        }
+
+        const payload: { recent_updates?: RecentUpdate[] } = await response.json();
+        setRecentUpdates(payload.recent_updates ?? []);
+      } catch (error) {
+        console.error("Error loading recent updates:", error);
+        setRecentUpdates([]);
+      } finally {
+        setUpdatesLoading(false);
+      }
+    };
+
+    void loadRecentUpdates();
+  }, [isAuthenticated]);
+
   const handleLogout = () => {
     clearStoredAuth();
     setIsAuthenticated(false);
     setUserName(null);
+    setUpdatesDropdownOpen(false);
     router.push("/login");
   };
 
@@ -128,6 +187,101 @@ const Navbar: React.FC = () => {
 
   const authenticatedActions = (
     <div className="flex items-center gap-4">
+      {/* Recent Updates Dropdown */}
+      <div className="relative hidden md:block">
+        <button
+          onClick={() => {
+            setProfileDropdownOpen(false);
+            setUpdatesDropdownOpen((current) => !current);
+          }}
+          className="relative flex items-center gap-2 rounded-full border border-gray-100 bg-white px-4 py-2 text-sm font-bold text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
+        >
+          <Bell size={16} className="text-emerald-600" />
+          <span>Recent Updates</span>
+          <ChevronDown
+            size={14}
+            className={`transition-transform ${updatesDropdownOpen ? "rotate-180" : ""}`}
+          />
+          {recentUpdates.some((update) => !update.is_read) && (
+            <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-white bg-rose-500" />
+          )}
+        </button>
+
+        {updatesDropdownOpen && (
+          <>
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setUpdatesDropdownOpen(false)}
+            />
+            <div className="absolute right-0 top-full z-50 mt-3 w-[24rem] overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-gray-400">
+                    Notifications
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-gray-900">Recent Updates</p>
+                </div>
+                <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+                  {recentUpdates.filter((update) => !update.is_read).length} unread
+                </div>
+              </div>
+
+              <div className="max-h-[24rem] overflow-y-auto p-3">
+                {updatesLoading ? (
+                  <div className="space-y-3 p-2">
+                    {[1, 2, 3].map((item) => (
+                      <div key={item} className="flex gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-3">
+                        <div className="h-10 w-10 rounded-full bg-gray-200 animate-pulse" />
+                        <div className="flex-1 space-y-2">
+                          <div className="h-3 w-3/4 rounded bg-gray-200 animate-pulse" />
+                          <div className="h-3 w-1/3 rounded bg-gray-100 animate-pulse" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : recentUpdates.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-6 py-10 text-center">
+                    <Bell size={20} className="text-gray-400" />
+                    <p className="mt-3 text-sm font-bold text-gray-900">Belum ada notifikasi</p>
+                    <p className="mt-1 text-xs leading-5 text-gray-500">
+                      Update terbaru akan muncul di sini setelah aktivitas pengguna terjadi.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {recentUpdates.map((update) => (
+                      <div
+                        key={update.notifications_id}
+                        className={`flex gap-3 rounded-2xl p-3 transition-colors ${update.is_read ? "bg-white" : "bg-emerald-50/60"}`}
+                      >
+                        <div className={`mt-0.5 flex h-10 w-10 items-center justify-center rounded-full ${update.is_read ? "bg-gray-100 text-gray-500" : "bg-emerald-100 text-emerald-700"}`}>
+                          {update.is_read ? <Circle size={14} /> : <CheckCircle2 size={14} />}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-sm font-semibold leading-6 text-gray-900">
+                              {update.pesan}
+                            </p>
+                            {!update.is_read && (
+                              <span className="mt-0.5 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+                                New
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-1 text-xs text-gray-500">
+                            {formatNotificationTime(update.created_at)}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
       {/* Points Badge */}
       <div
         className="hidden sm:flex items-center gap-2 rounded-full px-4 py-2"
