@@ -1,32 +1,23 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { getStoredAuth } from "@/lib/auth";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 const publicPaths = new Set(["/", "/login", "/register"]);
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const isClient = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false,
-  );
+  const { token, isLoading } = useAuth();
 
   const currentPath = pathname ?? "/";
-  const auth = isClient ? getStoredAuth() : null;
   const isPublicPath = publicPaths.has(currentPath);
-  const shouldRedirectToLogin = !isPublicPath && !auth;
-  const shouldRedirectToDashboard =
-    currentPath === "/" ||
-    currentPath === "/login" ||
-    currentPath === "/register"
-      ? Boolean(auth)
-      : false;
+  const isAuthPage = currentPath === "/login" || currentPath === "/register";
+  const shouldRedirectToLogin = !isLoading && !isPublicPath && !token;
+  const shouldRedirectToDashboard = !isLoading && isAuthPage && Boolean(token);
 
   useEffect(() => {
     if (shouldRedirectToLogin) {
@@ -40,7 +31,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [router, shouldRedirectToDashboard, shouldRedirectToLogin]);
 
-  if (!isClient || shouldRedirectToLogin || shouldRedirectToDashboard) {
+  if (isLoading || shouldRedirectToLogin || shouldRedirectToDashboard) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,_#f0fdf4_0%,_#ffffff_100%)]">
         <div className="rounded-3xl border border-emerald-100 bg-white px-6 py-5 text-sm font-semibold text-emerald-700 shadow-sm">
