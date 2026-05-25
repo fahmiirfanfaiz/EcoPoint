@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, PencilLine, Trash2 } from "lucide-react";
+import { API_BASE_URL } from "@/lib/auth";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,8 +34,6 @@ const getErrorMessage = (error: unknown) => {
 
 export default function AdminUsers() {
   const router = useRouter();
-  const apiBaseUrl =
-    process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api";
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +44,7 @@ export default function AdminUsers() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`${apiBaseUrl}/admin/users`);
+      const res = await fetch(`${API_BASE_URL}/admin/users`);
         if (!res.ok) {
           const fallbackText = await res.text();
           throw new Error(fallbackText || "Failed to fetch users");
@@ -61,11 +60,11 @@ export default function AdminUsers() {
     };
 
     fetchUsers();
-  }, [apiBaseUrl]);
+  }, []);
 
   const handleDelete = async (id: string) => {
     try {
-      const res = await fetch(`${apiBaseUrl}/admin/users/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/admin/users/${id}`, {
         method: "DELETE",
       });
       if (res.status === 204) {
@@ -188,10 +187,12 @@ export default function AdminUsers() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-50">
+              Cancel
+              </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteTarget && handleDelete(deleteTarget.user_id)}
-              className="bg-red-600 text-white hover:bg-red-700"
+              className="bg-red-600 text-white hover:bg-red-700 rounded-xl w-[5vw]"
             >
               Delete
             </AlertDialogAction>

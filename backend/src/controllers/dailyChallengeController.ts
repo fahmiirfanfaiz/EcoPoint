@@ -2,8 +2,13 @@ import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { AuthRequest } from "../middleware/auth.js";
 
-const MAX_DAILY = 3;  // Maximum challenges per day
-const MIN_DAILY = 2;  // Minimum challenges per day (including permanent)
+const MAX_DAILY = 3; // Maximum challenges per day
+const MIN_DAILY = 2; // Minimum challenges per day (including permanent)
+
+const getParamId = (value: string | string[] | undefined) => {
+  if (Array.isArray(value)) return value[0];
+  return value;
+};
 
 // ═══════════════════════════════════════════════════════════
 //  ADMIN ENDPOINTS — Manage Daily Challenges catalog
@@ -15,7 +20,7 @@ const MIN_DAILY = 2;  // Minimum challenges per day (including permanent)
  */
 export const getAllChallenges = async (
   _req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const challenges = await prisma.daily_challenges.findMany({
@@ -41,13 +46,15 @@ export const getAllChallenges = async (
  */
 export const getBonusSetting = async (
   _req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const setting = await prisma.global_settings.findUnique({
       where: { setting_key: "DAILY_CHALLENGE_BONUS" },
     });
-    res.status(200).json({ bonus: setting ? Number(setting.setting_value) : 0 });
+    res
+      .status(200)
+      .json({ bonus: setting ? Number(setting.setting_value) : 0 });
   } catch (error) {
     console.error("Get bonus setting error:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -61,7 +68,7 @@ export const getBonusSetting = async (
  */
 export const updateBonusSetting = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const { bonus } = req.body;
@@ -72,11 +79,16 @@ export const updateBonusSetting = async (
 
     await prisma.global_settings.upsert({
       where: { setting_key: "DAILY_CHALLENGE_BONUS" },
-      create: { setting_key: "DAILY_CHALLENGE_BONUS", setting_value: String(bonus) },
+      create: {
+        setting_key: "DAILY_CHALLENGE_BONUS",
+        setting_value: String(bonus),
+      },
       update: { setting_value: String(bonus) },
     });
 
-    res.status(200).json({ message: "Bonus berhasil diupdate", bonus: Number(bonus) });
+    res
+      .status(200)
+      .json({ message: "Bonus berhasil diupdate", bonus: Number(bonus) });
   } catch (error) {
     console.error("Update bonus setting error:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -90,13 +102,22 @@ export const updateBonusSetting = async (
  */
 export const createChallenge = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
-    const { nama_challenge, deskripsi, poin_hadiah, target_count, challenge_type, is_permanent } = req.body;
+    const {
+      nama_challenge,
+      deskripsi,
+      poin_hadiah,
+      target_count,
+      challenge_type,
+      is_permanent,
+    } = req.body;
 
     if (!nama_challenge || !deskripsi || !challenge_type) {
-      res.status(400).json({ message: "nama_challenge, deskripsi, dan challenge_type wajib diisi" });
+      res.status(400).json({
+        message: "nama_challenge, deskripsi, dan challenge_type wajib diisi",
+      });
       return;
     }
 
@@ -132,11 +153,23 @@ export const createChallenge = async (
  */
 export const updateChallenge = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
-    const { id } = req.params;
-    const { nama_challenge, deskripsi, poin_hadiah, target_count, challenge_type, is_active, is_permanent } = req.body;
+    const id = getParamId(req.params.id);
+    if (!id) {
+      res.status(400).json({ message: "Invalid challenge id" });
+      return;
+    }
+    const {
+      nama_challenge,
+      deskripsi,
+      poin_hadiah,
+      target_count,
+      challenge_type,
+      is_active,
+      is_permanent,
+    } = req.body;
 
     const existing = await prisma.daily_challenges.findUnique({
       where: { challenge_id: id },
@@ -153,7 +186,9 @@ export const updateChallenge = async (
         ...(nama_challenge !== undefined && { nama_challenge }),
         ...(deskripsi !== undefined && { deskripsi }),
         ...(poin_hadiah !== undefined && { poin_hadiah: BigInt(poin_hadiah) }),
-        ...(target_count !== undefined && { target_count: BigInt(target_count) }),
+        ...(target_count !== undefined && {
+          target_count: BigInt(target_count),
+        }),
         ...(challenge_type !== undefined && { challenge_type }),
         ...(is_active !== undefined && { is_active }),
         ...(is_permanent !== undefined && { is_permanent }),
@@ -180,10 +215,14 @@ export const updateChallenge = async (
  */
 export const deleteChallenge = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = getParamId(req.params.id);
+    if (!id) {
+      res.status(400).json({ message: "Invalid challenge id" });
+      return;
+    }
 
     await prisma.daily_challenges.delete({
       where: { challenge_id: id },
@@ -202,7 +241,7 @@ export const deleteChallenge = async (
  */
 export const getTodayAdmin = async (
   _req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const today = getTodayDate();
@@ -213,23 +252,28 @@ export const getTodayAdmin = async (
     });
 
     if (todayChallenges.length === 0) {
-      res.status(200).json({ challenges: [], message: "Belum ada challenge untuk hari ini" });
+      res.status(200).json({
+        challenges: [],
+        message: "Belum ada challenge untuk hari ini",
+      });
       return;
     }
 
     res.status(200).json({
-      challenges: todayChallenges.map((tc) => ({
-        challenge_of_the_day_id: tc.id,
-        tanggal: tc.tanggal,
-        challenge_id: tc.daily_challenges.challenge_id,
-        nama_challenge: tc.daily_challenges.nama_challenge,
-        deskripsi: tc.daily_challenges.deskripsi,
-        poin_hadiah: Number(tc.daily_challenges.poin_hadiah),
-        target_count: Number(tc.daily_challenges.target_count),
-        challenge_type: tc.daily_challenges.challenge_type,
-        is_active: tc.daily_challenges.is_active,
-        is_permanent: tc.daily_challenges.is_permanent,
-      })),
+      challenges: todayChallenges.map(
+        (tc: (typeof todayChallenges)[number]) => ({
+          challenge_of_the_day_id: tc.id,
+          tanggal: tc.tanggal,
+          challenge_id: tc.daily_challenges.challenge_id,
+          nama_challenge: tc.daily_challenges.nama_challenge,
+          deskripsi: tc.daily_challenges.deskripsi,
+          poin_hadiah: Number(tc.daily_challenges.poin_hadiah),
+          target_count: Number(tc.daily_challenges.target_count),
+          challenge_type: tc.daily_challenges.challenge_type,
+          is_active: tc.daily_challenges.is_active,
+          is_permanent: tc.daily_challenges.is_permanent,
+        }),
+      ),
     });
   } catch (error) {
     console.error("Get today admin error:", error);
@@ -244,7 +288,7 @@ export const getTodayAdmin = async (
  */
 export const resetTodayChallenges = async (
   _req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const today = getTodayDate();
@@ -254,12 +298,16 @@ export const resetTodayChallenges = async (
     });
 
     if (todayChallenges.length === 0) {
-      res.status(400).json({ message: "Tidak ada challenge hari ini untuk direset" });
+      res
+        .status(400)
+        .json({ message: "Tidak ada challenge hari ini untuk direset" });
       return;
     }
 
     // Check if any user has progress on any of today's challenges
-    const todayIds = todayChallenges.map((tc) => tc.id);
+    const todayIds = todayChallenges.map(
+      (tc: (typeof todayChallenges)[number]) => tc.id,
+    );
     const activeProgress = await prisma.user_daily_challenges.findFirst({
       where: {
         challenge_of_the_day_id: { in: todayIds },
@@ -268,7 +316,8 @@ export const resetTodayChallenges = async (
 
     if (activeProgress) {
       res.status(409).json({
-        message: "Tidak bisa reset karena ada user yang sedang berproses pada daily challenge hari ini.",
+        message:
+          "Tidak bisa reset karena ada user yang sedang berproses pada daily challenge hari ini.",
       });
       return;
     }
@@ -278,7 +327,10 @@ export const resetTodayChallenges = async (
       where: { tanggal: today },
     });
 
-    res.status(200).json({ message: "Daily challenges hari ini berhasil direset. Challenge baru akan dipilih otomatis saat user mengakses." });
+    res.status(200).json({
+      message:
+        "Daily challenges hari ini berhasil direset. Challenge baru akan dipilih otomatis saat user mengakses.",
+    });
   } catch (error) {
     console.error("Reset today challenges error:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -297,7 +349,7 @@ export const resetTodayChallenges = async (
  */
 export const getTodayChallenge = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const today = getTodayDate();
@@ -320,7 +372,10 @@ export const getTodayChallenge = async (
         where: { is_active: true, is_permanent: false },
       });
 
-      if (permanentChallenges.length === 0 && nonPermanentChallenges.length === 0) {
+      if (
+        permanentChallenges.length === 0 &&
+        nonPermanentChallenges.length === 0
+      ) {
         res.status(200).json({
           message: "Tidak ada challenge aktif saat ini",
           challenges: [],
@@ -330,11 +385,15 @@ export const getTodayChallenge = async (
 
       // 3. Calculate how many random slots we need
       const permanentCount = permanentChallenges.length;
-      const randomSlotsNeeded = Math.max(0, Math.min(MAX_DAILY, MIN_DAILY + (MAX_DAILY - MIN_DAILY)) - permanentCount);
+      const randomSlotsNeeded = Math.max(
+        0,
+        Math.min(MAX_DAILY, MIN_DAILY + (MAX_DAILY - MIN_DAILY)) -
+          permanentCount,
+      );
       // Ensure we reach at least MIN_DAILY total
       const slotsToFill = Math.max(
         Math.max(0, MIN_DAILY - permanentCount),
-        Math.min(randomSlotsNeeded, nonPermanentChallenges.length)
+        Math.min(randomSlotsNeeded, nonPermanentChallenges.length),
       );
 
       // 4. Shuffle and pick random non-permanent challenges
@@ -363,7 +422,7 @@ export const getTodayChallenge = async (
 
     // If user is authenticated, include their progress for each challenge
     const challengesWithProgress = await Promise.all(
-      todayChallenges.map(async (tc) => {
+      todayChallenges.map(async (tc: (typeof todayChallenges)[number]) => {
         let userProgress = null;
         if (req.userId) {
           const progress = await prisma.user_daily_challenges.findUnique({
@@ -396,16 +455,21 @@ export const getTodayChallenge = async (
           is_permanent: tc.daily_challenges.is_permanent,
           user_progress: userProgress,
         };
-      })
+      }),
     );
 
     // Fetch global bonus points setting
     const bonusSetting = await prisma.global_settings.findUnique({
-      where: { setting_key: "DAILY_CHALLENGE_BONUS" }
+      where: { setting_key: "DAILY_CHALLENGE_BONUS" },
     });
-    const globalBonusPoints = bonusSetting ? Number(bonusSetting.setting_value) : 300;
+    const globalBonusPoints = bonusSetting
+      ? Number(bonusSetting.setting_value)
+      : 300;
 
-    res.status(200).json({ challenges: challengesWithProgress, global_bonus_points: globalBonusPoints });
+    res.status(200).json({
+      challenges: challengesWithProgress,
+      global_bonus_points: globalBonusPoints,
+    });
   } catch (error) {
     console.error("Get today challenge error:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -420,7 +484,7 @@ export const getTodayChallenge = async (
  */
 export const updateProgress = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const userId = req.userId!;
@@ -440,7 +504,9 @@ export const updateProgress = async (
     });
 
     if (!todayChallenge) {
-      res.status(404).json({ message: "Challenge tidak ditemukan untuk hari ini" });
+      res
+        .status(404)
+        .json({ message: "Challenge tidak ditemukan untuk hari ini" });
       return;
     }
 
@@ -483,7 +549,9 @@ export const updateProgress = async (
     });
 
     res.status(200).json({
-      message: isCompleted ? "Challenge selesai! Silakan claim poin." : "Progress terupdate",
+      message: isCompleted
+        ? "Challenge selesai! Silakan claim poin."
+        : "Progress terupdate",
       progress: {
         current_progress: Number(progress.current_progress),
         target_count: targetCount,
@@ -505,7 +573,7 @@ export const updateProgress = async (
  */
 export const claimPoints = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const userId = req.userId!;
@@ -523,7 +591,9 @@ export const claimPoints = async (
     });
 
     if (!todayChallenge) {
-      res.status(404).json({ message: "Challenge tidak ditemukan untuk hari ini" });
+      res
+        .status(404)
+        .json({ message: "Challenge tidak ditemukan untuk hari ini" });
       return;
     }
 
@@ -569,29 +639,36 @@ export const claimPoints = async (
 
       // Check if all today's challenges are completed
       const todayChallengesAll = await tx.challenge_of_the_day.findMany({
-        where: { tanggal: today }
+        where: { tanggal: today },
       });
       const todayIds = todayChallengesAll.map((tc: any) => tc.id);
 
       const allProgress = await tx.user_daily_challenges.findMany({
         where: {
           user_id: userId,
-          challenge_of_the_day_id: { in: todayIds }
-        }
+          challenge_of_the_day_id: { in: todayIds },
+        },
       });
 
-      const user = await tx.users.findUnique({ where: { user_id: userId }, select: { last_daily_bonus_claim: true } });
+      const user = await tx.users.findUnique({
+        where: { user_id: userId },
+        select: { last_daily_bonus_claim: true },
+      });
 
       const allCompleted = todayChallengesAll.every((tc: any) => {
-        const p = allProgress.find((up: any) => up.challenge_of_the_day_id === tc.id);
+        const p = allProgress.find(
+          (up: any) => up.challenge_of_the_day_id === tc.id,
+        );
         return p?.is_points_claimed;
       });
 
-      const hasClaimedBonusToday = user?.last_daily_bonus_claim && user.last_daily_bonus_claim.getTime() === today.getTime();
+      const hasClaimedBonusToday =
+        user?.last_daily_bonus_claim &&
+        user.last_daily_bonus_claim.getTime() === today.getTime();
 
       if (allCompleted && !hasClaimedBonusToday) {
         const bonusSetting = await tx.global_settings.findUnique({
-          where: { setting_key: "DAILY_CHALLENGE_BONUS" }
+          where: { setting_key: "DAILY_CHALLENGE_BONUS" },
         });
         bonusAmount = bonusSetting ? Number(bonusSetting.setting_value) : 300;
 
@@ -601,7 +678,7 @@ export const claimPoints = async (
           // Update last_daily_bonus_claim
           await tx.users.update({
             where: { user_id: userId },
-            data: { last_daily_bonus_claim: today }
+            data: { last_daily_bonus_claim: today },
           });
         }
       }
@@ -630,7 +707,10 @@ export const claimPoints = async (
     const errorMap: Record<string, { status: number; message: string }> = {
       NOT_STARTED: { status: 400, message: "Kamu belum memulai challenge ini" },
       NOT_COMPLETED: { status: 400, message: "Challenge belum selesai" },
-      ALREADY_CLAIMED: { status: 400, message: "Poin sudah di-claim sebelumnya" },
+      ALREADY_CLAIMED: {
+        status: 400,
+        message: "Poin sudah di-claim sebelumnya",
+      },
     };
 
     const mapped = errorMap[error?.message];
@@ -651,7 +731,7 @@ export const claimPoints = async (
  */
 export const trackAction = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const userId = req.userId!;
@@ -664,22 +744,28 @@ export const trackAction = async (
     }
 
     // Since REPORT and waste_report are sometimes used interchangeably
-    const actionTypes = action === "waste_report" || action === "REPORT" ? ["waste_report", "REPORT"] : [action];
+    const actionTypes =
+      action === "waste_report" || action === "REPORT"
+        ? ["waste_report", "REPORT"]
+        : [action];
 
     // Find all today's challenges matching the action type
     const matchingChallenges = await prisma.challenge_of_the_day.findMany({
       where: {
         tanggal: today,
         daily_challenges: {
-          challenge_type: { in: actionTypes }
-        }
+          challenge_type: { in: actionTypes },
+        },
       },
       include: { daily_challenges: true },
     });
 
     if (matchingChallenges.length === 0) {
       // No matching challenge for today, do nothing but return ok
-      res.status(200).json({ message: "No matching challenge for today", progress_updated: false });
+      res.status(200).json({
+        message: "No matching challenge for today",
+        progress_updated: false,
+      });
       return;
     }
 
@@ -723,12 +809,14 @@ export const trackAction = async (
 
       updatedCount++;
 
-      // If just completed, we could trigger badge evaluation here, 
+      // If just completed, we could trigger badge evaluation here,
       // but the user gets the badge upon claiming points or we can evaluate now.
       if (isCompleted) {
-        import("../services/achievementService.js").then(({ evaluateUserAchievements }) => {
-          evaluateUserAchievements(userId).catch(console.error);
-        });
+        import("../services/achievementService.js").then(
+          ({ evaluateUserAchievements }) => {
+            evaluateUserAchievements(userId).catch(console.error);
+          },
+        );
       }
     }
 

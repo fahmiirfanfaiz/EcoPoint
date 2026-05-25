@@ -1,3 +1,4 @@
+import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { cache } from "../lib/cache.js";
 
@@ -10,11 +11,12 @@ import { cache } from "../lib/cache.js";
  */
 export const getLeaderboard = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const limit = Math.min(Number(req.query.limit) || 10, 50);
-    const period = req.query.period === "mingguan" ? "mingguan" : "sepanjang-waktu";
+    const period =
+      req.query.period === "mingguan" ? "mingguan" : "sepanjang-waktu";
 
     const cacheKey = `leaderboard_${period}_${limit}`;
     const cachedData = cache.get(cacheKey);
@@ -55,8 +57,9 @@ export const getLeaderboard = async (
       redemptionsMap.set(r.user_id, Number(r._sum.poin_digunakan || 0));
     }
 
-    let leaderboardData = users.map((user) => {
-      const lifetimePts = Number(user.total_poin) + (redemptionsMap.get(user.user_id) || 0);
+    let leaderboardData = users.map((user: (typeof users)[number]) => {
+      const lifetimePts =
+        Number(user.total_poin) + (redemptionsMap.get(user.user_id) || 0);
       return {
         user_id: user.user_id,
         nama: user.nama,
@@ -106,34 +109,48 @@ export const getLeaderboard = async (
 
       const challengePointsMap = new Map<string, number>();
       for (const c of weeklyChallenges) {
-        const pts = Number(c.challenge_of_the_day.daily_challenges.poin_hadiah || 0);
-        challengePointsMap.set(c.user_id, (challengePointsMap.get(c.user_id) || 0) + pts);
+        const pts = Number(
+          c.challenge_of_the_day.daily_challenges.poin_hadiah || 0,
+        );
+        challengePointsMap.set(
+          c.user_id,
+          (challengePointsMap.get(c.user_id) || 0) + pts,
+        );
       }
 
       // 3. Update points_to_sort
-      leaderboardData = leaderboardData.map((u) => {
-        const weeklyPts =
-          (reportPointsMap.get(u.user_id) || 0) +
-          (challengePointsMap.get(u.user_id) || 0);
-        return { ...u, points_to_sort: weeklyPts };
-      });
+      leaderboardData = leaderboardData.map(
+        (u: (typeof leaderboardData)[number]) => {
+          const weeklyPts =
+            (reportPointsMap.get(u.user_id) || 0) +
+            (challengePointsMap.get(u.user_id) || 0);
+          return { ...u, points_to_sort: weeklyPts };
+        },
+      );
     }
 
     // Sort by points_to_sort descending
-    leaderboardData.sort((a, b) => b.points_to_sort - a.points_to_sort);
+    leaderboardData.sort(
+      (
+        a: (typeof leaderboardData)[number],
+        b: (typeof leaderboardData)[number],
+      ) => b.points_to_sort - a.points_to_sort,
+    );
 
     // Apply limit and rank
-    const leaderboard = leaderboardData.slice(0, limit).map((user, index) => ({
-      rank: index + 1,
-      user_id: user.user_id,
-      nama: user.nama,
-      nim: user.nim,
-      fakultas: user.fakultas,
-      profile_pic: user.profile_pic,
-      total_poin: user.points_to_sort, // For the UI, we return the sorted points as total_poin
-      badges_count: user.badges_count,
-      reports_count: user.reports_count,
-    }));
+    const leaderboard = leaderboardData
+      .slice(0, limit)
+      .map((user: (typeof leaderboardData)[number], index: number) => ({
+        rank: index + 1,
+        user_id: user.user_id,
+        nama: user.nama,
+        nim: user.nim,
+        fakultas: user.fakultas,
+        profile_pic: user.profile_pic,
+        total_poin: user.points_to_sort, // For the UI, we return the sorted points as total_poin
+        badges_count: user.badges_count,
+        reports_count: user.reports_count,
+      }));
 
     // Cache for 5 minutes (300 seconds)
     cache.set(cacheKey, leaderboard, 300);

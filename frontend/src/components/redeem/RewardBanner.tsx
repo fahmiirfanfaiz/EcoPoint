@@ -1,14 +1,39 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { getStoredAuth } from "@/lib/auth";
+import { ArrowDown } from "lucide-react";
+
 interface RewardsStoreBannerProps {
   balance?: number;
 }
 
-export default function RewardsStoreBanner({ balance = 1250 }: RewardsStoreBannerProps) {
+export default function RewardsStoreBanner({
+  balance,
+}: RewardsStoreBannerProps) {
+  const [currentBalance, setCurrentBalance] = useState<number>(
+    typeof balance === "number" ? balance : 0,
+  );
+
+  useEffect(() => {
+    const syncBalance = () => {
+      const storedBalance = getStoredAuth()?.user.total_poin ?? 0;
+      setCurrentBalance(typeof balance === "number" ? balance : storedBalance);
+    };
+
+    syncBalance();
+    window.addEventListener("ecopoint-auth-changed", syncBalance);
+    return () =>
+      window.removeEventListener("ecopoint-auth-changed", syncBalance);
+  }, [balance]);
+
   return (
     <div className="font-nunito w-full">
       <div
         className="relative flex items-center justify-between gap-4 rounded-2xl px-8 py-7 overflow-hidden"
         style={{
-          background: "linear-gradient(135deg, #34d399 0%, #10b981 40%, #059669 100%)",
+          background:
+            "linear-gradient(135deg, #34d399 0%, #10b981 40%, #059669 100%)",
           boxShadow: "0 8px 32px rgba(16,185,129,0.35)",
           minHeight: 110,
         }}
@@ -64,11 +89,25 @@ export default function RewardsStoreBanner({ balance = 1250 }: RewardsStoreBanne
           >
             Redeem your hard-earned points for exclusive campus perks.
           </p>
+
+          <button
+            type="button"
+            onClick={() => {
+              document.getElementById("reward-catalog")?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+            }}
+            className="mt-4 inline-flex w-fit items-center gap-2 rounded-full border border-white/30 bg-white/15 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-white/20"
+          >
+            <ArrowDown size={14} />
+            Lihat reward
+          </button>
         </div>
 
         {/* ── Right: Balance card ── */}
         <div
-          className="flex flex-col items-center justify-center flex-shrink-0 z-10"
+          className="flex shrink-0 flex-col items-center justify-center z-10"
           style={{
             background: "rgba(255,255,255,0.18)",
             backdropFilter: "blur(10px)",
@@ -112,7 +151,12 @@ export default function RewardsStoreBanner({ balance = 1250 }: RewardsStoreBanne
                 stroke="#15803d"
                 strokeWidth="0.5"
               />
-              <path d="M12 15v-4" stroke="#15803d" strokeWidth="1" strokeLinecap="round" />
+              <path
+                d="M12 15v-4"
+                stroke="#15803d"
+                strokeWidth="1"
+                strokeLinecap="round"
+              />
             </svg>
 
             <span
@@ -124,7 +168,7 @@ export default function RewardsStoreBanner({ balance = 1250 }: RewardsStoreBanne
                 lineHeight: 1,
               }}
             >
-              {balance.toLocaleString("id-ID")}
+              {currentBalance.toLocaleString("id-ID")}
             </span>
           </div>
 

@@ -12,7 +12,7 @@ export const getBadges = async (req: Request, res: Response) => {
       orderBy: { nilai_syarat: "asc" },
     });
     
-    const formattedBadges = badges.map((b: typeof badges[number]) => ({
+    const formattedBadges = badges.map((b: (typeof badges)[number]) => ({
       ...b,
       syarat_poin: Number(b.syarat_poin),
       nilai_syarat: Number(b.nilai_syarat),
@@ -40,7 +40,7 @@ export const getAllBadgesAdmin = async (_req: Request, res: Response) => {
     });
 
     res.status(200).json({
-      badges: badges.map((b) => ({
+      badges: badges.map((b: (typeof badges)[number]) => ({
         badges_id: b.badges_id,
         nama_badge: b.nama_badge,
         deskripsi: b.deskripsi,
@@ -102,7 +102,7 @@ export const createBadge = async (req: Request, res: Response): Promise<void> =>
  */
 export const updateBadge = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { nama_badge, deskripsi, jenis_syarat, nilai_syarat } = req.body;
 
     const existing = await prisma.badges.findUnique({
@@ -148,7 +148,7 @@ export const updateBadge = async (req: AuthRequest, res: Response): Promise<void
  */
 export const deleteBadge = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     // Check if any users have this badge
     const earnedCount = await prisma.user_badges.count({

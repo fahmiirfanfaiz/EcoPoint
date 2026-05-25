@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, PencilLine } from "lucide-react";
+import { API_BASE_URL } from "@/lib/auth";
 
 type User = {
   user_id: string;
@@ -15,9 +16,6 @@ type User = {
   total_poin: string;
   created_at: string;
 };
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api";
 
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : "Unknown error";

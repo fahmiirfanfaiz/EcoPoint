@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 
-const AI_SERVICE_URL =
-  process.env.AI_SERVICE_URL ??
-  process.env.NEXT_PUBLIC_AI_SERVICE_URL ??
-  "http://localhost:8000";
+const DEFAULT_AI_SERVICE_URL =
+  "https://ecopoint-ai-dqfhgxbbb6f8fafv.southeastasia-01.azurewebsites.net/";
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL ?? DEFAULT_AI_SERVICE_URL;
 const AI_SERVICE_API_KEY = process.env.AI_SERVICE_API_KEY ?? "";
 
 export const runtime = "nodejs";
@@ -84,8 +83,16 @@ export async function POST(request: Request) {
     }
 
     const verifyFormData = new FormData();
-    verifyFormData.append("before_image", beforeImage, beforeImage.name || "before.jpg");
-    verifyFormData.append("after_image", afterImage, afterImage.name || "after.jpg");
+    verifyFormData.append(
+      "before_image",
+      beforeImage,
+      beforeImage.name || "before.jpg",
+    );
+    verifyFormData.append(
+      "after_image",
+      afterImage,
+      afterImage.name || "after.jpg",
+    );
 
     if (typeof location === "string" && location.trim()) {
       verifyFormData.append("location", location.trim());

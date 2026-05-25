@@ -9,89 +9,95 @@ import { AuthRequest } from "../middleware/auth.js";
  */
 export const getDashboard = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const userId = req.userId!;
 
     // Run all queries in parallel for maximum efficiency
-    const [user, reportsCount, badgesCount, weeklyReports, recentBadges, recentNotifications] =
-      await Promise.all([
-        // 1. User profile
-        prisma.users.findUnique({
-          where: { user_id: userId },
-          select: {
-            user_id: true,
-            nama: true,
-            nim: true,
-            email: true,
-            role: true,
-            fakultas: true,
-            profile_pic: true,
-            is_edited: true,
-            total_poin: true,
-            created_at: true,
-            last_seen_level: true,
-            last_seen_badge_count: true,
-            current_login_streak: true,
-            last_login_date: true,
+    const [
+      user,
+      reportsCount,
+      badgesCount,
+      weeklyReports,
+      recentBadges,
+      recentNotifications,
+    ] = await Promise.all([
+      // 1. User profile
+      prisma.users.findUnique({
+        where: { user_id: userId },
+        select: {
+          user_id: true,
+          nama: true,
+          nim: true,
+          email: true,
+          role: true,
+          fakultas: true,
+          profile_pic: true,
+          is_edited: true,
+          total_poin: true,
+          created_at: true,
+          last_seen_level: true,
+          last_seen_badge_count: true,
+          current_login_streak: true,
+          last_login_date: true,
+        },
+      }),
+
+      // 2. Total reports submitted
+      prisma.waste_reports.count({
+        where: { user_id: userId },
+      }),
+
+      // 3. Total badges earned
+      prisma.user_badges.count({
+        where: { user_id: userId },
+      }),
+
+      // 4. Reports from last 7 days (for weekly activity chart)
+      prisma.waste_reports.findMany({
+        where: {
+          user_id: userId,
+          created_at: {
+            gte: getStartOfWeek(),
           },
-        }),
+        },
+        select: {
+          created_at: true,
+        },
+        orderBy: { created_at: "asc" },
+      }),
 
-        // 2. Total reports submitted
-        prisma.waste_reports.count({
-          where: { user_id: userId },
-        }),
-
-        // 3. Total badges earned
-        prisma.user_badges.count({
-          where: { user_id: userId },
-        }),
-
-        // 4. Reports from last 7 days (for weekly activity chart)
-        prisma.waste_reports.findMany({
-          where: {
-            user_id: userId,
-            created_at: {
-              gte: getStartOfWeek(),
+      // 5. Recent badges (latest 4)
+      prisma.user_badges.findMany({
+        where: { user_id: userId },
+        include: {
+          badges: {
+            select: {
+              badges_id: true,
+              nama_badge: true,
+              deskripsi: true,
+              syarat_poin: true,
             },
           },
-          select: {
-            created_at: true,
-          },
-          orderBy: { created_at: "asc" },
-        }),
+        },
+        orderBy: { earned_at: "desc" },
+        take: 4,
+      }),
 
-        // 5. Recent badges (latest 4)
-        prisma.user_badges.findMany({
-          where: { user_id: userId },
-          include: {
-            badges: {
-              select: {
-                badges_id: true,
-                nama_badge: true,
-                deskripsi: true,
-                syarat_poin: true,
-              },
-            },
-          },
-          orderBy: { earned_at: "desc" },
-          take: 4,
-        }),
-
-        // 6. Recent notifications (latest 5)
-        prisma.notifications.findMany({
-          where: { user_id: userId },
-          select: {
-            notifications_id: true,
-            pesan: true,
-            is_read: true,
-            created_at: true,
-          },
-          orderBy: { created_at: "desc" },
-          take: 5,
-        }),
-      ]);
+      // 6. Recent notifications (latest 5)
+      prisma.notifications.findMany({
+        where: { user_id: userId },
+        select: {
+          notifications_id: true,
+          pesan: true,
+          is_read: true,
+          created_at: true,
+        },
+        orderBy: { created_at: "desc" },
+        take: 5,
+      }),
+    ]);
 
     if (!user) {
       res.status(404).json({ message: "User tidak ditemukan" });
@@ -101,12 +107,14 @@ export const getDashboard = async (
     // Aggregate weekly activity by day of week (Mon=0 ... Sun=6)
     const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     const weeklyActivity = dayNames.map((day, index) => {
-      const count = weeklyReports.filter((r) => {
-        const reportDay = r.created_at.getDay();
-        // JS getDay(): 0=Sun, 1=Mon ... 6=Sat → remap to Mon=0 ... Sun=6
-        const mappedDay = reportDay === 0 ? 6 : reportDay - 1;
-        return mappedDay === index;
-      }).length;
+      const count = weeklyReports.filter(
+        (r: (typeof weeklyReports)[number]) => {
+          const reportDay = r.created_at.getDay();
+          // JS getDay(): 0=Sun, 1=Mon ... 6=Sat → remap to Mon=0 ... Sun=6
+          const mappedDay = reportDay === 0 ? 6 : reportDay - 1;
+          return mappedDay === index;
+        },
+      ).length;
       return { day, count };
     });
 
@@ -123,8 +131,16 @@ export const getDashboard = async (
       orderBy: { syarat_poin: "asc" },
     });
 
-    let currentLevel: { level_number: number; nama_level: string; syarat_poin: number } | null = null;
-    let nextLevel: { level_number: number; nama_level: string; syarat_poin: number } | null = null;
+    let currentLevel: {
+      level_number: number;
+      nama_level: string;
+      syarat_poin: number;
+    } | null = null;
+    let nextLevel: {
+      level_number: number;
+      nama_level: string;
+      syarat_poin: number;
+    } | null = null;
 
     for (let i = 0; i < allLevels.length; i++) {
       const lvl = allLevels[i];
@@ -153,8 +169,8 @@ export const getDashboard = async (
     today.setHours(0, 0, 0, 0);
 
     let streakUpdated = false;
-    let newStreak = user.current_login_streak || 0;
-    
+    let newStreak: number = Number(user.current_login_streak) || 0;
+
     if (!user.last_login_date) {
       // First login ever
       newStreak = 1;
@@ -162,10 +178,10 @@ export const getDashboard = async (
     } else {
       const lastLogin = new Date(user.last_login_date);
       lastLogin.setHours(0, 0, 0, 0);
-      
+
       const diffTime = Math.abs(today.getTime() - lastLogin.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-      
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
       if (diffDays === 1) {
         // Logged in yesterday
         newStreak += 1;
@@ -177,16 +193,21 @@ export const getDashboard = async (
       }
     }
 
+    let displayStreak = Number(user.current_login_streak) || 0;
+    let displayLastLogin: Date | null = user.last_login_date
+      ? new Date(user.last_login_date)
+      : null;
+
     if (streakUpdated) {
       await prisma.users.update({
         where: { user_id: userId },
         data: {
           current_login_streak: newStreak,
           last_login_date: today,
-        }
+        },
       });
-      user.current_login_streak = newStreak;
-      user.last_login_date = today;
+      displayStreak = newStreak;
+      displayLastLogin = today;
 
       // Also trigger daily challenge for login_streak
       const reqSimulated = { ...req, body: { action: "login_streak" } } as any;
@@ -205,6 +226,8 @@ export const getDashboard = async (
         total_poin: Number(user.total_poin),
         last_seen_level: user.last_seen_level,
         last_seen_badge_count: user.last_seen_badge_count,
+        current_login_streak: displayStreak,
+        last_login_date: displayLastLogin,
       },
       stats: {
         total_poin: Number(user.total_poin),
@@ -218,13 +241,15 @@ export const getDashboard = async (
         lifetime_poin: lifetimePoints,
       },
       weekly_activity: weeklyActivity,
-      recent_achievements: recentBadges.map((ub) => ({
-        badges_id: ub.badges.badges_id,
-        nama_badge: ub.badges.nama_badge,
-        deskripsi: ub.badges.deskripsi,
-        syarat_poin: Number(ub.badges.syarat_poin),
-        earned_at: ub.earned_at,
-      })),
+      recent_achievements: recentBadges.map(
+        (ub: (typeof recentBadges)[number]) => ({
+          badges_id: ub.badges.badges_id,
+          nama_badge: ub.badges.nama_badge,
+          deskripsi: ub.badges.deskripsi,
+          syarat_poin: Number(ub.badges.syarat_poin),
+          earned_at: ub.earned_at,
+        }),
+      ),
       recent_updates: recentNotifications,
     });
   } catch (error) {
@@ -239,7 +264,7 @@ export const getDashboard = async (
  */
 export const updateSeenAchievements = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const userId = req.userId!;
@@ -248,8 +273,12 @@ export const updateSeenAchievements = async (
     await prisma.users.update({
       where: { user_id: userId },
       data: {
-        ...(seen_level !== undefined && { last_seen_level: Number(seen_level) }),
-        ...(seen_badge_count !== undefined && { last_seen_badge_count: Number(seen_badge_count) }),
+        ...(seen_level !== undefined && {
+          last_seen_level: Number(seen_level),
+        }),
+        ...(seen_badge_count !== undefined && {
+          last_seen_badge_count: Number(seen_badge_count),
+        }),
       },
     });
 

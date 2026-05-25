@@ -38,12 +38,12 @@ export const evaluateUserAchievements = async (userId: string) => {
       where: { user_id: userId },
       select: { badges_id: true },
     });
-    const earnedBadgeIds = new Set(earnedBadges.map((b) => b.badges_id));
+    const earnedBadgeIds = new Set(earnedBadges.map((b: (typeof earnedBadges)[number]) => b.badges_id));
 
     // 3. Get all active badges the user hasn't earned yet
     const allBadges = await prisma.badges.findMany();
     const availableBadges = allBadges.filter(
-      (b) => !earnedBadgeIds.has(b.badges_id)
+      (b: (typeof allBadges)[number]) => !earnedBadgeIds.has(b.badges_id)
     );
 
     // 4. Evaluate rules

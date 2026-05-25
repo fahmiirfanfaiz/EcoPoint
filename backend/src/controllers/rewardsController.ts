@@ -2,13 +2,45 @@ import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { AuthRequest } from "../middleware/auth.js";
 
+const parseBigIntInput = (value: unknown, fallback: bigint): bigint => {
+  if (typeof value === "bigint") return value;
+  if (typeof value === "number" && Number.isFinite(value))
+    return BigInt(Math.trunc(value));
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return BigInt(Math.trunc(parsed));
+  }
+
+  return fallback;
+};
+
+const serializeReward = (
+  reward: {
+    reward_id: string;
+    nama_reward: string;
+    deskripsi: string;
+    poin_dibutuhkan: bigint;
+    stok: bigint;
+    is_active: boolean;
+  },
+  redeemedCount = 0,
+) => ({
+  reward_id: reward.reward_id,
+  nama_reward: reward.nama_reward,
+  deskripsi: reward.deskripsi,
+  poin_dibutuhkan: Number(reward.poin_dibutuhkan),
+  stok: Number(reward.stok),
+  is_active: reward.is_active,
+  redeemed_count: redeemedCount,
+});
+
 /**
  * GET /api/rewards
  * Public — returns all active rewards.
  */
 export const getRewards = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const rewards = await prisma.rewards.findMany({
@@ -17,11 +49,9 @@ export const getRewards = async (
     });
 
     res.status(200).json({
-      rewards: rewards.map((r) => ({
-        ...r,
-        poin_dibutuhkan: Number(r.poin_dibutuhkan),
-        stok: Number(r.stok),
-      })),
+      rewards: rewards.map((r: (typeof rewards)[number]) =>
+        serializeReward(r),
+      ),
     });
   } catch (error) {
     console.error("Get rewards error:", error);
@@ -43,7 +73,7 @@ export const getRewards = async (
  */
 export const redeemReward = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const userId = req.userId!;
@@ -54,7 +84,7 @@ export const redeemReward = async (
       return;
     }
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // 1. Get user's current points
       const user = await tx.users.findUnique({
         where: { user_id: userId },
@@ -156,7 +186,7 @@ export const redeemReward = async (
  */
 export const getRedemptionHistory = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const userId = req.userId!;
@@ -175,7 +205,7 @@ export const getRedemptionHistory = async (
     });
 
     res.status(200).json({
-      redemptions: redemptions.map((r) => ({
+      redemptions: redemptions.map((r: (typeof redemptions)[number]) => ({
         redemption_id: r.redemption_id,
         reward_name: r.rewards.nama_reward,
         reward_description: r.rewards.deskripsi,
@@ -189,4 +219,255 @@ export const getRedemptionHistory = async (
   }
 };
 
-export default { getRewards, redeemReward, getRedemptionHistory };
+/**
+ * GET /api/admin/rewards
+ * Admin — returns all rewards including inactive items and redemption counts.
+ */
+export const getAllRewardsAdmin = async (
+  _req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const rewards = await prisma.rewards.findMany({
+      orderBy: [{ is_active: "desc" }, { poin_dibutuhkan: "asc" }],
+      include: {
+        _count: {
+          select: { redemptions: true },
+        },
+      },
+    });
+
+    res.status(200).json({
+      rewards: rewards.map((reward: (typeof rewards)[number]) =>
+        serializeReward(reward, reward._count.redemptions),
+      ),
+    });
+  } catch (error) {
+    console.error("Get all rewards admin error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * GET /api/admin/rewards/:id
+ * Admin — returns reward detail including redemption count.
+ */
+export const getRewardAdminDetail = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const rewardId = Array.isArray(req.params.id)
+      ? req.params.id[0]
+      : req.params.id;
+
+    if (!rewardId) {
+      res.status(400).json({ message: "reward_id tidak valid" });
+      return;
+    }
+
+    const reward = await prisma.rewards.findUnique({
+      where: { reward_id: rewardId },
+      include: {
+        _count: {
+          select: { redemptions: true },
+        },
+      },
+    });
+
+    if (!reward) {
+      res.status(404).json({ message: "Reward tidak ditemukan" });
+      return;
+    }
+
+    res.status(200).json({
+      reward: serializeReward(reward, reward._count.redemptions),
+    });
+  } catch (error) {
+    console.error("Get reward admin detail error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * POST /api/admin/rewards
+ * Admin — create a reward catalog item.
+ */
+export const createReward = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const { nama_reward, deskripsi, poin_dibutuhkan, stok, is_active } =
+      req.body;
+
+    if (!nama_reward || !deskripsi || poin_dibutuhkan === undefined) {
+      res.status(400).json({
+        message: "nama_reward, deskripsi, dan poin_dibutuhkan wajib diisi",
+      });
+      return;
+    }
+
+    const reward = await prisma.rewards.create({
+      data: {
+        nama_reward,
+        deskripsi,
+        poin_dibutuhkan: parseBigIntInput(poin_dibutuhkan, 0n),
+        stok: parseBigIntInput(stok, 0n),
+        is_active: typeof is_active === "boolean" ? is_active : true,
+      },
+    });
+
+    res.status(201).json({
+      message: "Reward berhasil dibuat",
+      reward: {
+        reward_id: reward.reward_id,
+        nama_reward: reward.nama_reward,
+        deskripsi: reward.deskripsi,
+        poin_dibutuhkan: Number(reward.poin_dibutuhkan),
+        stok: Number(reward.stok),
+        is_active: reward.is_active,
+      },
+    });
+  } catch (error: any) {
+    console.error("Create reward error:", error);
+    if (error?.code === "P2002") {
+      res.status(409).json({ message: "Nama reward sudah digunakan" });
+      return;
+    }
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * PUT /api/admin/rewards/:id
+ * Admin — update a reward catalog item.
+ */
+export const updateReward = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const rewardId = Array.isArray(req.params.id)
+      ? req.params.id[0]
+      : req.params.id;
+    if (!rewardId) {
+      res.status(400).json({ message: "reward_id tidak valid" });
+      return;
+    }
+
+    const existing = await prisma.rewards.findUnique({
+      where: { reward_id: rewardId },
+    });
+
+    if (!existing) {
+      res.status(404).json({ message: "Reward tidak ditemukan" });
+      return;
+    }
+
+    const { nama_reward, deskripsi, poin_dibutuhkan, stok, is_active } =
+      req.body;
+    const updated = await prisma.rewards.update({
+      where: { reward_id: rewardId },
+      data: {
+        ...(typeof nama_reward === "string" && nama_reward.trim() !== ""
+          ? { nama_reward }
+          : {}),
+        ...(typeof deskripsi === "string" && deskripsi.trim() !== ""
+          ? { deskripsi }
+          : {}),
+        ...(poin_dibutuhkan !== undefined
+          ? {
+              poin_dibutuhkan: parseBigIntInput(
+                poin_dibutuhkan,
+                existing.poin_dibutuhkan,
+              ),
+            }
+          : {}),
+        ...(stok !== undefined
+          ? { stok: parseBigIntInput(stok, existing.stok) }
+          : {}),
+        ...(typeof is_active === "boolean" ? { is_active } : {}),
+      },
+    });
+
+    res.status(200).json({
+      message: "Reward berhasil diperbarui",
+      reward: {
+        reward_id: updated.reward_id,
+        nama_reward: updated.nama_reward,
+        deskripsi: updated.deskripsi,
+        poin_dibutuhkan: Number(updated.poin_dibutuhkan),
+        stok: Number(updated.stok),
+        is_active: updated.is_active,
+      },
+    });
+  } catch (error: any) {
+    console.error("Update reward error:", error);
+    if (error?.code === "P2002") {
+      res.status(409).json({ message: "Nama reward sudah digunakan" });
+      return;
+    }
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * DELETE /api/admin/rewards/:id
+ * Admin — delete a reward if it is no longer needed.
+ */
+export const deleteReward = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const rewardId = Array.isArray(req.params.id)
+      ? req.params.id[0]
+      : req.params.id;
+    if (!rewardId) {
+      res.status(400).json({ message: "reward_id tidak valid" });
+      return;
+    }
+
+    const existing = await prisma.rewards.findUnique({
+      where: { reward_id: rewardId },
+    });
+    if (!existing) {
+      res.status(404).json({ message: "Reward tidak ditemukan" });
+      return;
+    }
+
+    const redemptionCount = await prisma.redemptions.count({
+      where: { reward_id: rewardId },
+    });
+    if (redemptionCount > 0) {
+      await prisma.rewards.update({
+        where: { reward_id: rewardId },
+        data: { is_active: false },
+      });
+
+      res.status(200).json({
+        message: "Reward dinonaktifkan karena sudah memiliki riwayat redeem",
+      });
+      return;
+    }
+
+    await prisma.rewards.delete({ where: { reward_id: rewardId } });
+
+    res.status(200).json({ message: "Reward berhasil dihapus" });
+  } catch (error) {
+    console.error("Delete reward error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export default {
+  getRewards,
+  redeemReward,
+  getRedemptionHistory,
+  getAllRewardsAdmin,
+  getRewardAdminDetail,
+  createReward,
+  updateReward,
+  deleteReward,
+};

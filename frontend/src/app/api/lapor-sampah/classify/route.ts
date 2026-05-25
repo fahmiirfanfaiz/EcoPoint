@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 
-const AI_SERVICE_URL =
-  process.env.AI_SERVICE_URL ??
-  process.env.NEXT_PUBLIC_AI_SERVICE_URL ??
-  "http://localhost:8000";
+const DEFAULT_AI_SERVICE_URL =
+  "https://ecopoint-ai-dqfhgxbbb6f8fafv.southeastasia-01.azurewebsites.net/";
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL ?? DEFAULT_AI_SERVICE_URL;
 const AI_SERVICE_API_KEY = process.env.AI_SERVICE_API_KEY ?? "";
 
 export const runtime = "nodejs";
@@ -57,7 +56,7 @@ const postToAiService = async (path: string, body: FormData) => {
 
 /**
  * POST /api/lapor-sampah/classify
- * 
+ *
  * Pure proxy to the AI service /classify endpoint.
  * Does NOT create any DB records or upload to storage.
  * Returns the AI classification result to the client for preview.

@@ -10,15 +10,30 @@ import WeeklyActivity from "@/components/dashboard/WeeklyActivity";
 import RecentAchievements from "@/components/dashboard/RecentAchievements";
 import RecentUpdates from "@/components/dashboard/RecentUpdates";
 import DailyChallenges from "@/components/dashboard/DailyChallenges";
-import { Calendar } from "lucide-react";
 
-const API = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api";
+const API =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://api-ecopoint.vercel.app/api";
 
 interface DashboardData {
-  stats: { total_poin: number; reports_submitted: number; badges_earned: number };
+  stats: {
+    total_poin: number;
+    reports_submitted: number;
+    badges_earned: number;
+  };
   weekly_activity: { day: string; count: number }[];
-  recent_achievements: { badges_id: string; nama_badge: string; deskripsi: string; syarat_poin: number; earned_at: string }[];
-  recent_updates: { notifications_id: string; pesan: string; is_read: boolean; created_at: string }[];
+  recent_achievements: {
+    badges_id: string;
+    nama_badge: string;
+    deskripsi: string;
+    syarat_poin: number;
+    earned_at: string;
+  }[];
+  recent_updates: {
+    notifications_id: string;
+    pesan: string;
+    is_read: boolean;
+    created_at: string;
+  }[];
   user: { created_at: string };
 }
 
@@ -30,7 +45,10 @@ export default function ProfilePage() {
 
   const fetchDashboard = useCallback(async () => {
     const auth = getStoredAuth();
-    if (!auth?.token) { router.push("/login"); return; }
+    if (!auth?.token) {
+      router.push("/login");
+      return;
+    }
     try {
       const res = await fetch(`${API}/dashboard`, {
         headers: { Authorization: `Bearer ${auth.token}` },
@@ -52,12 +70,16 @@ export default function ProfilePage() {
   useEffect(() => {
     fetchDashboard();
     window.addEventListener("ecopoint-auth-changed", fetchDashboard);
-    return () => window.removeEventListener("ecopoint-auth-changed", fetchDashboard);
+    return () =>
+      window.removeEventListener("ecopoint-auth-changed", fetchDashboard);
   }, [fetchDashboard]);
 
   // Member since
   const memberSince = data?.user?.created_at
-    ? new Date(data.user.created_at).toLocaleDateString("id-ID", { month: "long", year: "numeric" })
+    ? new Date(data.user.created_at).toLocaleDateString("id-ID", {
+        month: "long",
+        year: "numeric",
+      })
     : null;
 
   if (loading) {
@@ -86,7 +108,10 @@ export default function ProfilePage() {
   return (
     <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-6 px-6 py-8">
       {/* Profile Card */}
-      <ProfileCard onOpenChallenges={() => setShowChallenges(true)} memberSince={memberSince} />
+      <ProfileCard
+        onOpenChallenges={() => setShowChallenges(true)}
+        memberSince={memberSince}
+      />
 
       {/* Stats Cards - full width, live data */}
       <StatsCards

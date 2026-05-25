@@ -21,7 +21,10 @@ interface TodayChallengeData {
   } | null;
 }
 
-const TYPE_ICONS: Record<string, { bg: string; color: string; icon: React.ElementType }> = {
+const TYPE_ICONS: Record<
+  string,
+  { bg: string; color: string; icon: React.ElementType }
+> = {
   waste_report: {
     bg: "bg-blue-100",
     color: "text-blue-600",
@@ -56,15 +59,19 @@ interface DailyChallengesProps {
   onClose: () => void;
 }
 
-const API = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api";
+const API =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://api-ecopoint.vercel.app/api";
 
-const DailyChallenges: React.FC<DailyChallengesProps> = ({ isOpen, onClose }) => {
+const DailyChallenges: React.FC<DailyChallengesProps> = ({
+  isOpen,
+  onClose,
+}) => {
   const [challenges, setChallenges] = useState<TodayChallengeData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const [globalBonusPoints, setGlobalBonusPoints] = useState(0);
-  
+
   // Bonus Modal State
   const [showBonusModal, setShowBonusModal] = useState(false);
   const [earnedBonusAmount, setEarnedBonusAmount] = useState(0);
@@ -84,8 +91,8 @@ const DailyChallenges: React.FC<DailyChallengesProps> = ({ isOpen, onClose }) =>
       const data = await res.json();
       setChallenges(data.challenges ?? []);
       setGlobalBonusPoints(data.global_bonus_points ?? 0);
-    } catch (e: any) {
-      setError(e.message || "Terjadi kesalahan");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Terjadi kesalahan");
     } finally {
       setLoading(false);
     }
@@ -98,7 +105,10 @@ const DailyChallenges: React.FC<DailyChallengesProps> = ({ isOpen, onClose }) =>
     try {
       const res = await fetch(`${API}/daily-challenges/claim`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${auth.token}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${auth.token}`,
+        },
         body: JSON.stringify({ challenge_of_the_day_id: challengeOfTheDayId }),
       });
       if (res.ok) {
@@ -106,9 +116,9 @@ const DailyChallenges: React.FC<DailyChallengesProps> = ({ isOpen, onClose }) =>
         const newTotal = result.data.total_poin;
         const bonusAwarded = result.data.bonus_awarded;
         const bonusAmount = result.data.bonus_didapat;
-        
+
         await fetchChallenges(); // refresh
-        
+
         // Update local storage and trigger global event
         updateStoredPoints(newTotal);
 
@@ -177,7 +187,10 @@ const DailyChallenges: React.FC<DailyChallengesProps> = ({ isOpen, onClose }) =>
           {/* Decorative blurs */}
           <div
             className="pointer-events-none absolute right-[-16px] top-[-16px] h-24 w-24 rounded-full"
-            style={{ background: "rgba(255,255,255,0.1)", filter: "blur(12px)" }}
+            style={{
+              background: "rgba(255,255,255,0.1)",
+              filter: "blur(12px)",
+            }}
           />
           <div
             className="pointer-events-none absolute -left-8 bottom-[-8px] h-32 w-32 rounded-full"
@@ -222,12 +235,35 @@ const DailyChallenges: React.FC<DailyChallengesProps> = ({ isOpen, onClose }) =>
           {globalBonusPoints > 0 && challenges.length > 0 && (
             <div className="flex items-center gap-3 rounded-2xl bg-amber-50 p-4 outline outline-1 outline-amber-200 shadow-sm">
               <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-500">
-                <Star size={22} className={challenges.every(c => c.user_progress?.is_completed && c.user_progress?.is_points_claimed) ? "fill-amber-500" : ""} />
+                <Star
+                  size={22}
+                  className={
+                    challenges.every(
+                      (c) =>
+                        c.user_progress?.is_completed &&
+                        c.user_progress?.is_points_claimed,
+                    )
+                      ? "fill-amber-500"
+                      : ""
+                  }
+                />
               </div>
               <p className="font-quicksand text-sm font-semibold text-amber-800 leading-snug">
-                {challenges.every(c => c.user_progress?.is_completed && c.user_progress?.is_points_claimed) 
-                  ? "Luar Biasa! Semua challenge selesai dan bonus harian berhasil diklaim!" 
-                  : <>Selesaikan semua challenge hari ini untuk dapat <span className="font-extrabold text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-md">BONUS +{globalBonusPoints} Pts</span>!</>}
+                {challenges.every(
+                  (c) =>
+                    c.user_progress?.is_completed &&
+                    c.user_progress?.is_points_claimed,
+                ) ? (
+                  "Luar Biasa! Semua challenge selesai dan bonus harian berhasil diklaim!"
+                ) : (
+                  <>
+                    Selesaikan semua challenge hari ini untuk dapat{" "}
+                    <span className="font-extrabold text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-md">
+                      BONUS +{globalBonusPoints} Pts
+                    </span>
+                    !
+                  </>
+                )}
               </p>
             </div>
           )}
@@ -235,18 +271,25 @@ const DailyChallenges: React.FC<DailyChallengesProps> = ({ isOpen, onClose }) =>
           {loading ? (
             <div className="flex flex-col items-center gap-3 py-8">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600"></div>
-              <span className="font-nunito text-sm text-slate-400">Memuat challenges...</span>
+              <span className="font-nunito text-sm text-slate-400">
+                Memuat challenges...
+              </span>
             </div>
           ) : error ? (
             <div className="flex flex-col items-center gap-2 py-8">
               <span className="font-nunito text-sm text-red-500">{error}</span>
-              <button onClick={fetchChallenges} className="font-nunito text-xs font-bold text-emerald-600 hover:underline">
+              <button
+                onClick={fetchChallenges}
+                className="font-nunito text-xs font-bold text-emerald-600 hover:underline"
+              >
                 Coba lagi
               </button>
             </div>
           ) : challenges.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-8">
-              <span className="font-nunito text-sm text-slate-400">Belum ada challenge untuk hari ini.</span>
+              <span className="font-nunito text-sm text-slate-400">
+                Belum ada challenge untuk hari ini.
+              </span>
             </div>
           ) : (
             challenges.map((c) => {
@@ -258,8 +301,8 @@ const DailyChallenges: React.FC<DailyChallengesProps> = ({ isOpen, onClose }) =>
               const progressLabel = completed
                 ? "Completed"
                 : progress > 0
-                ? "Progress"
-                : "Not Started";
+                  ? "Progress"
+                  : "Not Started";
               const claimed = c.user_progress?.is_points_claimed ?? false;
               const isFullyDone = completed && claimed;
 
@@ -270,19 +313,23 @@ const DailyChallenges: React.FC<DailyChallengesProps> = ({ isOpen, onClose }) =>
                     isFullyDone
                       ? "bg-slate-50 outline outline-1 outline-offset-[-1px] outline-slate-100 opacity-60 grayscale-[0.5]"
                       : completed
-                      ? "bg-emerald-50 outline outline-1 outline-offset-[-1px] outline-emerald-200 shadow-sm"
-                      : "bg-slate-50 outline outline-1 outline-offset-[-1px] outline-slate-100"
+                        ? "bg-emerald-50 outline outline-1 outline-offset-[-1px] outline-emerald-200 shadow-sm"
+                        : "bg-slate-50 outline outline-1 outline-offset-[-1px] outline-slate-100"
                   }`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={`flex h-[34px] w-[34px] flex-shrink-0 items-center justify-center rounded-[16px] ${iconData.bg} ${iconData.color}`}>
+                      <div
+                        className={`flex h-[34px] w-[34px] flex-shrink-0 items-center justify-center rounded-[16px] ${iconData.bg} ${iconData.color}`}
+                      >
                         <iconData.icon size={18} strokeWidth={2.5} />
                       </div>
                       <div className="flex flex-col">
                         <span
                           className={`font-nunito text-sm font-bold leading-5 ${
-                            isFullyDone ? "text-slate-500 line-through" : "text-slate-800"
+                            isFullyDone
+                              ? "text-slate-500 line-through"
+                              : "text-slate-800"
                           }`}
                         >
                           {c.nama_challenge}
@@ -306,7 +353,9 @@ const DailyChallenges: React.FC<DailyChallengesProps> = ({ isOpen, onClose }) =>
                         disabled={claimingId === c.challenge_of_the_day_id}
                         className="font-nunito flex-shrink-0 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-600 shadow-md shadow-emerald-200 disabled:opacity-50"
                       >
-                        {claimingId === c.challenge_of_the_day_id ? "..." : `Claim +${c.poin_hadiah}`}
+                        {claimingId === c.challenge_of_the_day_id
+                          ? "..."
+                          : `Claim +${c.poin_hadiah}`}
                       </button>
                     )}
                     {isFullyDone && (
@@ -323,7 +372,9 @@ const DailyChallenges: React.FC<DailyChallengesProps> = ({ isOpen, onClose }) =>
                       </span>
                       <span
                         className={`font-nunito text-xs font-semibold leading-4 ${
-                          progress > 0 && !isFullyDone ? "text-emerald-600" : "text-slate-400"
+                          progress > 0 && !isFullyDone
+                            ? "text-emerald-600"
+                            : "text-slate-400"
                         }`}
                       >
                         {progress}/{total}

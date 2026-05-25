@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsx watch src/server.ts",
+    "postinstall": "prisma generate",
     "build": "tsc",
     "start": "node dist/server.js"
   },
@@ -23,6 +24,7 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.20.0",
+    "serverless-http": "^4.0.0",
     "web-push": "^3.6.7"
   },
   "devDependencies": {

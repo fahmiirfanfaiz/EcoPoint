@@ -36,7 +36,7 @@ export const listWasteReports = async (
       orderBy: { created_at: "desc" },
     });
 
-    const formatted = reports.map((r) => ({
+    const formatted = reports.map((r: (typeof reports)[number]) => ({
       report_id: Number(r.report_id),
       user_id: r.user_id,
       foto_url: r.foto_url,
@@ -257,7 +257,7 @@ export const getMyReports = async (
       orderBy: { created_at: "desc" },
     });
 
-    const formatted = reports.map((r) => ({
+    const formatted = reports.map((r: (typeof reports)[number]) => ({
       report_id: Number(r.report_id),
       user_id: r.user_id,
       foto_url: r.foto_url,
