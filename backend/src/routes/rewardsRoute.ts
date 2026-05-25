@@ -10,5 +10,6 @@ router.get("/", rewardsController.getRewards);
 // Protected
 router.post("/redeem", authMiddleware, rewardsController.redeemReward);
 router.get("/history", authMiddleware, rewardsController.getRedemptionHistory);
+router.patch("/use", authMiddleware, rewardsController.useReward);
 
 export default router;

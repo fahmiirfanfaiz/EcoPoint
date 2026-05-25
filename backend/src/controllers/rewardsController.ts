@@ -207,14 +207,84 @@ export const getRedemptionHistory = async (
     res.status(200).json({
       redemptions: redemptions.map((r: (typeof redemptions)[number]) => ({
         redemption_id: r.redemption_id,
+        reward_id: r.reward_id,
         reward_name: r.rewards.nama_reward,
         reward_description: r.rewards.deskripsi,
         poin_digunakan: Number(r.poin_digunakan),
         redeemed_at: r.redeemed_at,
+        used_at: r.used_at,
       })),
     });
   } catch (error) {
     console.error("Redemption history error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * PATCH /api/rewards/use
+ * Protected — marks a redeemed reward as "used" by setting used_at = now().
+ * Body: { redemption_id: string }
+ */
+export const useReward = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    const userId = req.userId!;
+    const { redemption_id } = req.body;
+
+    if (!redemption_id) {
+      res.status(400).json({ message: "redemption_id wajib diisi" });
+      return;
+    }
+
+    // Find the redemption that belongs to this user
+    const redemption = await prisma.redemptions.findFirst({
+      where: {
+        redemption_id,
+        user_id: userId,
+      },
+      include: {
+        rewards: {
+          select: { nama_reward: true },
+        },
+      },
+    });
+
+    if (!redemption) {
+      res.status(404).json({ message: "Riwayat penukaran tidak ditemukan" });
+      return;
+    }
+
+    if (redemption.used_at !== null) {
+      res.status(400).json({ message: "Reward ini sudah pernah dipakai" });
+      return;
+    }
+
+    // Mark as used
+    await prisma.redemptions.update({
+      where: {
+        redemption_id_user_id_reward_id: {
+          redemption_id: redemption.redemption_id,
+          user_id: redemption.user_id,
+          reward_id: redemption.reward_id,
+        },
+      },
+      data: {
+        used_at: new Date(),
+      },
+    });
+
+    res.status(200).json({
+      message: `Reward "${redemption.rewards.nama_reward}" berhasil ditandai sebagai dipakai!`,
+      data: {
+        redemption_id: redemption.redemption_id,
+        used_at: new Date(),
+      },
+    });
+  } catch (error) {
+    console.error("Use reward error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -465,6 +535,7 @@ export default {
   getRewards,
   redeemReward,
   getRedemptionHistory,
+  useReward,
   getAllRewardsAdmin,
   getRewardAdminDetail,
   createReward,
