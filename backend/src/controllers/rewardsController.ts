@@ -2,6 +2,76 @@ import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { AuthRequest } from "../middleware/auth.js";
 
+const parseBigIntInput = (value: unknown, fallback: bigint): bigint => {
+  if (typeof value === "bigint") return value;
+  if (typeof value === "number" && Number.isFinite(value))
+    return BigInt(Math.trunc(value));
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return BigInt(Math.trunc(parsed));
+  }
+
+  return fallback;
+};
+
+const DEFAULT_REWARDS = [
+  {
+    nama_reward: "Voucher Kopi Campus 15K",
+    deskripsi: "Voucher minuman kopi di kantin atau tenant kampus pilihan.",
+    poin_dibutuhkan: 150,
+    stok: 20,
+  },
+  {
+    nama_reward: "Kupon Makan Siang 20K",
+    deskripsi: "Potongan harga untuk paket makan siang di merchant kampus.",
+    poin_dibutuhkan: 250,
+    stok: 15,
+  },
+  {
+    nama_reward: "Voucher Fotokopi 50 Lembar",
+    deskripsi: "Tukar poin untuk voucher fotokopi tugas atau materi kuliah.",
+    poin_dibutuhkan: 100,
+    stok: 30,
+  },
+  {
+    nama_reward: "Tumbler EcoPoint",
+    deskripsi: "Merchandise ramah lingkungan untuk membawa minum harian.",
+    poin_dibutuhkan: 600,
+    stok: 10,
+  },
+  {
+    nama_reward: "Voucher Pulsa/Data 25K",
+    deskripsi: "Berguna untuk kebutuhan internet dan komunikasi mahasiswa.",
+    poin_dibutuhkan: 350,
+    stok: 12,
+  },
+  {
+    nama_reward: "Kupon Snack Sehat",
+    deskripsi: "Ditukar dengan snack ringan di tenant sehat kampus.",
+    poin_dibutuhkan: 180,
+    stok: 18,
+  },
+] as const;
+
+const ensureDefaultRewards = async (): Promise<void> => {
+  const rewardCount = await prisma.rewards.count();
+
+  if (rewardCount > 0) {
+    return;
+  }
+
+  await prisma.rewards.createMany({
+    data: DEFAULT_REWARDS.map((reward) => ({
+      nama_reward: reward.nama_reward,
+      deskripsi: reward.deskripsi,
+      poin_dibutuhkan: BigInt(reward.poin_dibutuhkan),
+      stok: BigInt(reward.stok),
+      is_active: true,
+    })),
+    skipDuplicates: true,
+  });
+};
+
 /**
  * GET /api/rewards
  * Public — returns all active rewards.
@@ -11,6 +81,8 @@ export const getRewards = async (
   res: Response,
 ): Promise<void> => {
   try {
+    await ensureDefaultRewards();
+
     const rewards = await prisma.rewards.findMany({
       where: { is_active: true },
       orderBy: { poin_dibutuhkan: "asc" },
@@ -189,4 +261,221 @@ export const getRedemptionHistory = async (
   }
 };
 
-export default { getRewards, redeemReward, getRedemptionHistory };
+/**
+ * GET /api/admin/rewards
+ * Admin — returns all rewards including inactive items and redemption counts.
+ */
+export const getAllRewardsAdmin = async (
+  _req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    await ensureDefaultRewards();
+
+    const rewards = await prisma.rewards.findMany({
+      orderBy: [{ is_active: "desc" }, { poin_dibutuhkan: "asc" }],
+      include: {
+        _count: {
+          select: { redemptions: true },
+        },
+      },
+    });
+
+    res.status(200).json({
+      rewards: rewards.map((reward: (typeof rewards)[number]) => ({
+        reward_id: reward.reward_id,
+        nama_reward: reward.nama_reward,
+        deskripsi: reward.deskripsi,
+        poin_dibutuhkan: Number(reward.poin_dibutuhkan),
+        stok: Number(reward.stok),
+        is_active: reward.is_active,
+        redeemed_count: reward._count.redemptions,
+      })),
+    });
+  } catch (error) {
+    console.error("Get all rewards admin error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * POST /api/admin/rewards
+ * Admin — create a reward catalog item.
+ */
+export const createReward = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const { nama_reward, deskripsi, poin_dibutuhkan, stok, is_active } =
+      req.body;
+
+    if (!nama_reward || !deskripsi || poin_dibutuhkan === undefined) {
+      res.status(400).json({
+        message: "nama_reward, deskripsi, dan poin_dibutuhkan wajib diisi",
+      });
+      return;
+    }
+
+    const reward = await prisma.rewards.create({
+      data: {
+        nama_reward,
+        deskripsi,
+        poin_dibutuhkan: parseBigIntInput(poin_dibutuhkan, 0n),
+        stok: parseBigIntInput(stok, 0n),
+        is_active: typeof is_active === "boolean" ? is_active : true,
+      },
+    });
+
+    res.status(201).json({
+      message: "Reward berhasil dibuat",
+      reward: {
+        reward_id: reward.reward_id,
+        nama_reward: reward.nama_reward,
+        deskripsi: reward.deskripsi,
+        poin_dibutuhkan: Number(reward.poin_dibutuhkan),
+        stok: Number(reward.stok),
+        is_active: reward.is_active,
+      },
+    });
+  } catch (error: any) {
+    console.error("Create reward error:", error);
+    if (error?.code === "P2002") {
+      res.status(409).json({ message: "Nama reward sudah digunakan" });
+      return;
+    }
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * PUT /api/admin/rewards/:id
+ * Admin — update a reward catalog item.
+ */
+export const updateReward = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const rewardId = Array.isArray(req.params.id)
+      ? req.params.id[0]
+      : req.params.id;
+    if (!rewardId) {
+      res.status(400).json({ message: "reward_id tidak valid" });
+      return;
+    }
+
+    const existing = await prisma.rewards.findUnique({
+      where: { reward_id: rewardId },
+    });
+
+    if (!existing) {
+      res.status(404).json({ message: "Reward tidak ditemukan" });
+      return;
+    }
+
+    const { nama_reward, deskripsi, poin_dibutuhkan, stok, is_active } =
+      req.body;
+    const updated = await prisma.rewards.update({
+      where: { reward_id: rewardId },
+      data: {
+        ...(typeof nama_reward === "string" && nama_reward.trim() !== ""
+          ? { nama_reward }
+          : {}),
+        ...(typeof deskripsi === "string" && deskripsi.trim() !== ""
+          ? { deskripsi }
+          : {}),
+        ...(poin_dibutuhkan !== undefined
+          ? {
+              poin_dibutuhkan: parseBigIntInput(
+                poin_dibutuhkan,
+                existing.poin_dibutuhkan,
+              ),
+            }
+          : {}),
+        ...(stok !== undefined
+          ? { stok: parseBigIntInput(stok, existing.stok) }
+          : {}),
+        ...(typeof is_active === "boolean" ? { is_active } : {}),
+      },
+    });
+
+    res.status(200).json({
+      message: "Reward berhasil diperbarui",
+      reward: {
+        reward_id: updated.reward_id,
+        nama_reward: updated.nama_reward,
+        deskripsi: updated.deskripsi,
+        poin_dibutuhkan: Number(updated.poin_dibutuhkan),
+        stok: Number(updated.stok),
+        is_active: updated.is_active,
+      },
+    });
+  } catch (error: any) {
+    console.error("Update reward error:", error);
+    if (error?.code === "P2002") {
+      res.status(409).json({ message: "Nama reward sudah digunakan" });
+      return;
+    }
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * DELETE /api/admin/rewards/:id
+ * Admin — delete a reward if it is no longer needed.
+ */
+export const deleteReward = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const rewardId = Array.isArray(req.params.id)
+      ? req.params.id[0]
+      : req.params.id;
+    if (!rewardId) {
+      res.status(400).json({ message: "reward_id tidak valid" });
+      return;
+    }
+
+    const existing = await prisma.rewards.findUnique({
+      where: { reward_id: rewardId },
+    });
+    if (!existing) {
+      res.status(404).json({ message: "Reward tidak ditemukan" });
+      return;
+    }
+
+    const redemptionCount = await prisma.redemptions.count({
+      where: { reward_id: rewardId },
+    });
+    if (redemptionCount > 0) {
+      await prisma.rewards.update({
+        where: { reward_id: rewardId },
+        data: { is_active: false },
+      });
+
+      res.status(200).json({
+        message: "Reward dinonaktifkan karena sudah memiliki riwayat redeem",
+      });
+      return;
+    }
+
+    await prisma.rewards.delete({ where: { reward_id: rewardId } });
+
+    res.status(200).json({ message: "Reward berhasil dihapus" });
+  } catch (error) {
+    console.error("Delete reward error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export default {
+  getRewards,
+  redeemReward,
+  getRedemptionHistory,
+  getAllRewardsAdmin,
+  createReward,
+  updateReward,
+  deleteReward,
+};

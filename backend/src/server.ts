@@ -15,6 +15,10 @@ app.listen(port, () => {
   console.log(`   - GET    /api/rewards`);
   console.log(`   - POST   /api/rewards/redeem`);
   console.log(`   - GET    /api/rewards/history`);
+  console.log(`   - GET    /api/admin/rewards`);
+  console.log(`   - POST   /api/admin/rewards`);
+  console.log(`   - PUT    /api/admin/rewards/:id`);
+  console.log(`   - DELETE /api/admin/rewards/:id`);
   console.log(`   - GET    /api/badges`);
   console.log(`   - GET    /api/badges/admin/all`);
   console.log(`   - POST   /api/badges/admin`);
