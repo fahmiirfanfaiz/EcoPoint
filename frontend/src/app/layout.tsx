@@ -2,10 +2,9 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Quicksand, Outfit, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { AuthProvider } from "@/lib/auth/AuthContext";
 import { LevelUpProvider } from "@/lib/LevelUpProvider";
+import AppShell from "@/components/AppShell";
 
 const nunito = localFont({
   src: "../../public/fonts/nunito.regular.ttf",
@@ -55,11 +54,7 @@ export default function RootLayout({
       <body>
         <AuthProvider>
           <LevelUpProvider>
-            <div className="flex min-h-screen w-full flex-col">
-              <Navbar />
-              <main className="w-full flex-1">{children}</main>
-              <Footer />
-            </div>
+            <AppShell>{children}</AppShell>
           </LevelUpProvider>
         </AuthProvider>
       </body>
