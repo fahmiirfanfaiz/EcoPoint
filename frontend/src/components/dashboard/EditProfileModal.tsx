@@ -32,7 +32,7 @@ const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg width='100' height='100' viewB
 // 6 Hardcoded profile pictures using Dicebear sets — object-contain friendly SVGs
 const AVATAR_OPTIONS = [
   { id: 0, url: DEFAULT_AVATAR, label: "Default" },
-  { id: 1, url: "https://api.dicebear.com/9.x/bottts/svg?seed=Robot&backgroundColor=transparent", label: "Robot" },
+  { id: 1, url: "https://pbs.twimg.com/media/GyhpWN_bkAAz4Bn.jpg", label: "Beta Buka Gudang" },
   { id: 2, url: "https://api.dicebear.com/9.x/fun-emoji/svg?seed=Happy&backgroundColor=transparent", label: "Happy Emoji" },
   { id: 3, url: "https://api.dicebear.com/9.x/micah/svg?seed=Cool&backgroundColor=transparent", label: "Cool" },
   { id: 4, url: "https://api.dicebear.com/9.x/notionists/svg?seed=Idea&backgroundColor=transparent", label: "Idea" },
@@ -60,12 +60,12 @@ export default function EditProfileModal({ isOpen, onClose, user, onSuccess }: E
     fakultas: "",
     profile_pic: 0
   });
-  
+
   const [isEdited, setIsEdited] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
-  
+
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -162,7 +162,7 @@ export default function EditProfileModal({ isOpen, onClose, user, onSuccess }: E
         }
       };
       saveAuth(newAuth);
-      
+
       onSuccess();
     } catch (err: any) {
       setError(err.message || "Terjadi kesalahan");
@@ -196,7 +196,7 @@ export default function EditProfileModal({ isOpen, onClose, user, onSuccess }: E
             )}
 
             <form id="edit-profile-form" onSubmit={handleFormSubmit} className="space-y-8">
-              
+
               {/* Avatar Selection */}
               <div>
                 <h3 className="font-nunito text-lg font-bold text-gray-900 mb-3">Profile Picture</h3>
@@ -206,11 +206,10 @@ export default function EditProfileModal({ isOpen, onClose, user, onSuccess }: E
                       key={opt.id}
                       type="button"
                       onClick={() => setForm({ ...form, profile_pic: opt.id })}
-                      className={`relative aspect-square rounded-2xl border-2 overflow-hidden transition-all ${
-                        form.profile_pic === opt.id 
-                          ? "border-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.1)]" 
-                          : "border-transparent hover:border-gray-200"
-                      }`}
+                      className={`relative aspect-square rounded-2xl border-2 overflow-hidden transition-all ${form.profile_pic === opt.id
+                        ? "border-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.1)]"
+                        : "border-transparent hover:border-gray-200"
+                        }`}
                     >
                       <div className="absolute inset-0 bg-gray-50" />
                       <img src={opt.url} alt={opt.label} className="absolute inset-0 h-full w-full object-contain p-2" />
@@ -274,7 +273,7 @@ export default function EditProfileModal({ isOpen, onClose, user, onSuccess }: E
                         className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500"
                       />
                     </div>
-                    
+
                     {/* NIM */}
                     <div>
                       <label className="mb-1.5 block text-sm font-bold text-gray-700">NIM</label>
