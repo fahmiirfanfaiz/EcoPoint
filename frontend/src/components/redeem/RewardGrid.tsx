@@ -4,10 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Gift,
   Loader2,
-  Search,
   ShieldAlert,
-  Sparkles,
   Star,
+  CheckCircle,
 } from "lucide-react";
 import {
   API_BASE_URL,
@@ -16,23 +15,8 @@ import {
   updateStoredPoints,
 } from "@/lib/auth";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
-type SortOption =
-  | "Rekomendasi"
-  | "Poin Terendah"
-  | "Poin Tertinggi"
-  | "Stok Terbanyak";
-type FilterOption = "Semua" | "Bisa Ditukar" | "Stok Habis" | "Nonaktif";
+type FilterOption = "Semua" | "Bisa Ditukar" | "Belum Cukup";
 
 interface Reward {
   reward_id: string;
@@ -43,28 +27,15 @@ interface Reward {
   is_active: boolean;
 }
 
-const SORT_OPTIONS: SortOption[] = [
-  "Rekomendasi",
-  "Poin Terendah",
-  "Poin Tertinggi",
-  "Stok Terbanyak",
-];
 const FILTER_OPTIONS: FilterOption[] = [
   "Semua",
   "Bisa Ditukar",
-  "Stok Habis",
-  "Nonaktif",
+  "Belum Cukup",
 ];
 
 const formatPoints = (value: number) => value.toLocaleString("id-ID");
 
-const badgeClass = (active: boolean, affordable: boolean, stock: number) => {
-  if (!active) return "bg-slate-100 text-slate-600 border-slate-200";
-  if (stock <= 0) return "bg-rose-50 text-rose-700 border-rose-200";
-  if (affordable) return "bg-emerald-50 text-emerald-700 border-emerald-200";
-  return "bg-amber-50 text-amber-700 border-amber-200";
-};
-
+/* ── Single Reward Card ── */
 function RewardCard({
   reward,
   userPoints,
@@ -78,121 +49,223 @@ function RewardCard({
 }) {
   const affordable = userPoints >= reward.poin_dibutuhkan;
   const canRedeem = reward.is_active && reward.stok > 0 && affordable;
-  const buttonLabel = redeeming
-    ? "Menukar..."
-    : !reward.is_active
-      ? "Nonaktif"
-      : reward.stok <= 0
-        ? "Stok Habis"
-        : affordable
-          ? "Tukar Poin"
-          : "Poin Kurang";
+  const outOfStock = reward.stok <= 0;
+  const inactive = !reward.is_active;
+
+  const statusLabel = inactive
+    ? "Nonaktif"
+    : outOfStock
+      ? "Stok Habis"
+      : affordable
+        ? "Bisa Ditukar"
+        : "Poin Belum Cukup";
+
+  const statusColor = inactive
+    ? "bg-slate-100 text-slate-500 border border-slate-200/80"
+    : outOfStock
+      ? "bg-red-50 text-red-600 border border-red-200/80"
+      : affordable
+        ? "bg-emerald-50 text-emerald-700 border border-emerald-200/80"
+        : "bg-amber-50 text-amber-700 border border-amber-200/80";
 
   return (
-    <div className="group overflow-hidden rounded-3xl border border-white/70 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.08)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(15,23,42,0.12)]">
-      <div className="relative min-h-40 overflow-hidden bg-linear-to-br from-emerald-500 via-emerald-500 to-teal-600 p-5 text-white">
-        <div className="absolute inset-0 opacity-35">
-          <div className="absolute -left-8 -top-12 h-40 w-40 rounded-full bg-white/20" />
-          <div className="absolute right-0 top-0 h-28 w-28 rounded-full bg-white/10" />
-        </div>
-        <div className="relative z-10 flex h-full items-end justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/80">
-              Reward
-            </p>
-            <h3 className="mt-2 line-clamp-2 text-xl font-black leading-tight">
+    <div
+      className={`group flex flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-200 ${
+        canRedeem
+          ? "border-emerald-100 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-100/40"
+          : "border-slate-100 opacity-80"
+      }`}
+    >
+      {/* Header gradient */}
+      <div
+        className="relative overflow-hidden p-5 pb-4"
+        style={{
+          background: canRedeem
+            ? "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)"
+            : "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
+        }}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span
+                className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${statusColor}`}
+              >
+                {statusLabel}
+              </span>
+              {!inactive && reward.stok > 0 && (
+                <span className="inline-block rounded-full bg-white px-2.5 py-0.5 text-[10px] font-bold text-slate-600 border border-slate-200 shadow-sm">
+                  Sisa {reward.stok}
+                </span>
+              )}
+            </div>
+            <h3 className="mt-2 line-clamp-2 text-lg font-extrabold leading-tight text-slate-900">
               {reward.nama_reward}
             </h3>
           </div>
-          <div className="rounded-2xl bg-white/15 px-3 py-2 text-right backdrop-blur-sm">
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/80">
-              Points
-            </p>
-            <p className="mt-1 text-2xl font-black leading-none">
+          <div
+            className={`flex shrink-0 flex-col items-center rounded-xl px-3 py-2 ${
+              canRedeem ? "bg-emerald-500" : "bg-slate-400"
+            }`}
+          >
+            <span className="text-[9px] font-bold uppercase tracking-wider text-white/80">
+              Poin
+            </span>
+            <span className="text-xl font-black leading-none text-white">
               {formatPoints(reward.poin_dibutuhkan)}
-            </p>
+            </span>
           </div>
         </div>
       </div>
 
-      <div className="flex h-full flex-col gap-4 p-5">
-        <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
-          <span
-            className={`rounded-full border px-3 py-1 ${badgeClass(reward.is_active, affordable, reward.stok)}`}
-          >
-            {reward.is_active
-              ? reward.stok > 0
-                ? affordable
-                  ? "Bisa ditukar"
-                  : "Butuh poin lebih"
-                : "Stok habis"
-              : "Nonaktif"}
-          </span>
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-slate-600">
-            {reward.stok > 0 ? `${reward.stok} tersedia` : "Stok habis"}
-          </span>
-        </div>
-
-        <p className="min-h-12 text-sm leading-6 text-slate-600">
+      {/* Body */}
+      <div className="flex flex-1 flex-col gap-3 p-5 pt-3">
+        <p className="text-sm leading-relaxed text-slate-500 line-clamp-2">
           {reward.deskripsi}
         </p>
 
-        <div className="mt-auto rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-          <div className="flex items-center justify-between gap-3">
-            <span className="inline-flex items-center gap-2 font-semibold">
-              <Star size={14} className="text-emerald-600" />
-              Saldo kamu
-            </span>
-            <span className="font-black text-slate-900">
-              {formatPoints(userPoints)}
-            </span>
-          </div>
-          <div className="mt-2 flex items-center justify-between gap-3 text-xs font-semibold text-slate-500">
-            <span>Butuh {formatPoints(reward.poin_dibutuhkan)} poin</span>
-            <span>
-              {formatPoints(Math.max(0, reward.poin_dibutuhkan - userPoints))}{" "}
-              sisa
-            </span>
-          </div>
-        </div>
-
+        {/* CTA Button */}
         <button
           type="button"
           disabled={redeeming || !canRedeem}
           onClick={() => onRedeem(reward)}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-black text-white shadow-[0_10px_24px_rgba(16,185,129,0.28)] transition-all duration-200 hover:bg-emerald-600 hover:shadow-[0_12px_28px_rgba(16,185,129,0.36)] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none disabled:hover:bg-slate-300 disabled:hover:shadow-none"
+          className={`mt-auto inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-all duration-200 ${
+            canRedeem
+              ? "bg-emerald-500 text-white shadow-md shadow-emerald-200/60 hover:bg-emerald-600 hover:shadow-lg hover:shadow-emerald-200/80 active:scale-[0.98]"
+              : "cursor-not-allowed bg-slate-100 text-slate-400"
+          }`}
         >
           {redeeming ? (
             <>
               <Loader2 size={16} className="animate-spin" />
               Menukar...
             </>
-          ) : (
+          ) : canRedeem ? (
             <>
               <Gift size={16} />
-              {buttonLabel}
+              Tukar Poin
+            </>
+          ) : (
+            <>
+              {inactive
+                ? "Nonaktif"
+                : outOfStock
+                  ? "Stok Habis"
+                  : `Kurang ${formatPoints(reward.poin_dibutuhkan - userPoints)} poin`}
             </>
           )}
         </button>
-
-        {reward.is_active && reward.stok > 0 && !affordable && !redeeming ? (
-          <p className="-mt-1 text-center text-xs font-semibold text-amber-600">
-            Butuh {formatPoints(reward.poin_dibutuhkan - userPoints)} poin lagi
-            untuk menukar.
-          </p>
-        ) : null}
       </div>
     </div>
   );
 }
 
+/* ── Confirmation Modal (inline, no Radix dependency) ── */
+function ConfirmRedeemModal({
+  reward,
+  userPoints,
+  onConfirm,
+  onCancel,
+}: {
+  reward: Reward;
+  userPoints: number;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const sisaPoin = userPoints - reward.poin_dibutuhkan;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={onCancel}
+      />
+      {/* Modal */}
+      <div className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+        {/* Header */}
+        <div
+          className="p-6 pb-4"
+          style={{
+            background: "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)",
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500 shadow-md">
+              <Gift size={20} className="text-white" />
+            </div>
+            <div>
+              <h3 className="text-lg font-extrabold text-slate-900">
+                Konfirmasi Penukaran
+              </h3>
+              <p className="text-sm text-slate-500">
+                Pastikan sebelum menukar poin
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="p-6 space-y-4">
+          <div className="rounded-xl bg-slate-50 p-4">
+            <p className="text-sm font-bold text-slate-700">
+              {reward.nama_reward}
+            </p>
+            <p className="mt-1 text-xs text-slate-400 line-clamp-2">
+              {reward.deskripsi}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl bg-amber-50 p-3 text-center">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">
+                Biaya
+              </p>
+              <p className="mt-1 text-lg font-black text-amber-700">
+                -{formatPoints(reward.poin_dibutuhkan)}
+              </p>
+            </div>
+            <div className="rounded-xl bg-emerald-50 p-3 text-center">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">
+                Sisa Poin
+              </p>
+              <p className="mt-1 text-lg font-black text-emerald-700">
+                {formatPoints(sisaPoin)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer buttons */}
+        <div className="flex gap-3 border-t border-slate-100 p-4">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50 active:scale-[0.98]"
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-sm font-bold text-white shadow-md shadow-emerald-200/60 transition-all hover:bg-emerald-600 active:scale-[0.98]"
+          >
+            <CheckCircle size={16} />
+            Ya, Tukar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Main Grid ── */
 export default function RewardsGrid() {
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
   const [filter, setFilter] = useState<FilterOption>("Semua");
-  const [sort, setSort] = useState<SortOption>("Rekomendasi");
   const [userPoints, setUserPoints] = useState<number>(0);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
   const [pendingReward, setPendingReward] = useState<Reward | null>(null);
@@ -277,46 +350,31 @@ export default function RewardsGrid() {
     return () => window.removeEventListener("ecopoint-auth-changed", syncAuth);
   }, []);
 
-  const filteredRewards = useMemo(() => {
-    let items = rewards.filter((reward) => {
-      if (filter === "Bisa Ditukar")
-        return (
-          reward.is_active &&
-          reward.stok > 0 &&
-          userPoints >= reward.poin_dibutuhkan
-        );
-      if (filter === "Stok Habis") return reward.stok <= 0;
-      if (filter === "Nonaktif") return !reward.is_active;
-      return true;
-    });
+  const activeRewards = useMemo(
+    () => rewards.filter((r) => r.is_active && r.stok > 0),
+    [rewards],
+  );
 
-    if (sort === "Poin Terendah") {
-      items = [...items].sort((a, b) => a.poin_dibutuhkan - b.poin_dibutuhkan);
-    } else if (sort === "Poin Tertinggi") {
-      items = [...items].sort((a, b) => b.poin_dibutuhkan - a.poin_dibutuhkan);
-    } else if (sort === "Stok Terbanyak") {
-      items = [...items].sort((a, b) => b.stok - a.stok);
-    } else {
-      items = [...items].sort((a, b) => {
-        const aAffordable =
-          a.is_active && a.stok > 0 && userPoints >= a.poin_dibutuhkan;
-        const bAffordable =
-          b.is_active && b.stok > 0 && userPoints >= b.poin_dibutuhkan;
-        if (aAffordable !== bAffordable) return aAffordable ? -1 : 1;
-        if (a.poin_dibutuhkan !== b.poin_dibutuhkan)
-          return a.poin_dibutuhkan - b.poin_dibutuhkan;
-        return b.stok - a.stok;
-      });
+  const filteredRewards = useMemo(() => {
+    let items = activeRewards;
+
+    if (filter === "Bisa Ditukar") {
+      items = items.filter((r) => userPoints >= r.poin_dibutuhkan);
+    } else if (filter === "Belum Cukup") {
+      items = items.filter((r) => userPoints < r.poin_dibutuhkan);
     }
 
-    return items;
-  }, [filter, rewards, sort, userPoints]);
+    // Sort: affordable first, then by points ascending
+    return [...items].sort((a, b) => {
+      const aAffordable = userPoints >= a.poin_dibutuhkan;
+      const bAffordable = userPoints >= b.poin_dibutuhkan;
+      if (aAffordable !== bAffordable) return aAffordable ? -1 : 1;
+      return a.poin_dibutuhkan - b.poin_dibutuhkan;
+    });
+  }, [filter, activeRewards, userPoints]);
 
-  const redeemableCount = rewards.filter(
-    (reward) =>
-      reward.is_active &&
-      reward.stok > 0 &&
-      userPoints >= reward.poin_dibutuhkan,
+  const redeemableCount = activeRewards.filter(
+    (r) => userPoints >= r.poin_dibutuhkan,
   ).length;
 
   const requestRedeem = (reward: Reward) => {
@@ -384,7 +442,7 @@ export default function RewardsGrid() {
       updateStoredPoints(newPoints);
       setMessage({
         type: "ok",
-        text: `Reward ${reward.nama_reward} berhasil ditukar.`,
+        text: `🎉 Reward "${reward.nama_reward}" berhasil ditukar!`,
       });
       await loadRewards();
     } catch (err) {
@@ -398,70 +456,9 @@ export default function RewardsGrid() {
   };
 
   return (
-    <div id="reward-catalog" className="font-nunito w-full space-y-6">
-      <div className="grid gap-4 rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_12px_36px_rgba(15,23,42,0.08)] lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
-        <div>
-          <p className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-black uppercase tracking-[0.22em] text-emerald-700">
-            <Sparkles size={12} />
-            Reward Redemption
-          </p>
-          <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-900">
-            Tukar poin dengan benefit kampus yang nyata.
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-            Reward akan otomatis berkurang stoknya saat ditukar, dan saldo poin
-            kamu akan turun secara atomik melalui backend.
-          </p>
-    
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 rounded-[22px] bg-slate-50 p-4">
-          <div className="rounded-2xl bg-white p-4 shadow-sm">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
-              Saldo kamu
-            </p>
-            <p className="mt-2 text-2xl font-black text-slate-900">
-              {formatPoints(userPoints)}
-            </p>
-          </div>
-          <div className="rounded-2xl bg-white p-4 shadow-sm">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
-              Reward aktif
-            </p>
-            <p className="mt-2 text-2xl font-black text-slate-900">
-              {rewards.filter((reward) => reward.is_active).length}
-            </p>
-          </div>
-          <div className="rounded-2xl bg-white p-4 shadow-sm">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
-              Bisa ditukar
-            </p>
-            <p className="mt-2 text-2xl font-black text-emerald-600">
-              {redeemableCount}
-            </p>
-          </div>
-          <div className="rounded-2xl bg-white p-4 shadow-sm">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
-              Filter aktif
-            </p>
-            <p className="mt-2 text-2xl font-black text-slate-900">{filter}</p>
-          </div>
-        </div>
-      </div>
-
-      {message && (
-        <div
-          className={`rounded-2xl border p-4 text-sm font-semibold ${
-            message.type === "ok"
-              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-              : "border-rose-200 bg-rose-50 text-rose-700"
-          }`}
-        >
-          {message.text}
-        </div>
-      )}
-
-      <div className="flex flex-col gap-4 rounded-3xl border border-white/70 bg-white p-4 shadow-[0_12px_32px_rgba(15,23,42,0.06)] lg:flex-row lg:items-center lg:justify-between">
+    <div className="font-nunito w-full space-y-5">
+      {/* ── Filter + Stats Bar ── */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-2">
           {FILTER_OPTIONS.map((option) => (
             <button
@@ -469,53 +466,66 @@ export default function RewardsGrid() {
               onClick={() => setFilter(option)}
               className={`rounded-full px-4 py-2 text-sm font-bold transition-all ${
                 filter === option
-                  ? "bg-slate-900 text-white shadow-md"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  ? "bg-emerald-500 text-white shadow-md shadow-emerald-200/60"
+                  : "bg-white text-slate-500 border border-slate-200 hover:bg-slate-50"
               }`}
             >
               {option}
+              {option === "Bisa Ditukar" && redeemableCount > 0 && (
+                <span className="ml-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-xs font-black">
+                  {redeemableCount}
+                </span>
+              )}
             </button>
           ))}
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0">
-          <Search size={16} className="text-slate-400" />
-          <span className="text-sm font-semibold text-slate-500">Sort:</span>
-          {SORT_OPTIONS.map((option) => (
-            <button
-              key={option}
-              onClick={() => setSort(option)}
-              className={`rounded-full border px-4 py-2 text-sm font-semibold transition-all ${
-                sort === option
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                  : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
-              }`}
-            >
-              {option}
-            </button>
-          ))}
+        <div className="flex items-center gap-2 text-sm text-slate-400">
+          <Star size={14} className="text-emerald-500" />
+          <span>
+            <strong className="text-slate-700">{formatPoints(userPoints)}</strong>{" "}
+            poin tersedia
+          </span>
         </div>
       </div>
 
+      {/* ── Toast Messages ── */}
+      {message && (
+        <div
+          className={`flex items-center gap-3 rounded-xl border p-4 text-sm font-semibold transition-all ${
+            message.type === "ok"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+              : "border-rose-200 bg-rose-50 text-rose-700"
+          }`}
+        >
+          {message.type === "ok" ? (
+            <CheckCircle size={18} />
+          ) : (
+            <ShieldAlert size={18} />
+          )}
+          {message.text}
+        </div>
+      )}
+
+      {/* ── Grid ── */}
       {!isHydrated || loading ? (
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 6 }).map((_, index) => (
             <div
               key={index}
-              className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm"
+              className="overflow-hidden rounded-2xl border border-slate-100 bg-white"
             >
-              <Skeleton className="h-40 w-full rounded-none" />
+              <Skeleton className="h-28 w-full rounded-none" />
               <div className="space-y-3 p-5">
-                <Skeleton className="h-4 w-24 rounded-full" />
-                <Skeleton className="h-6 w-3/4 rounded" />
-                <Skeleton className="h-16 w-full rounded" />
-                <Skeleton className="h-12 w-full rounded-2xl" />
+                <Skeleton className="h-3 w-20 rounded-full" />
+                <Skeleton className="h-5 w-3/4 rounded" />
+                <Skeleton className="h-10 w-full rounded-xl" />
               </div>
             </div>
           ))}
         </div>
       ) : error ? (
-        <div className="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-rose-700">
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-rose-700">
           <div className="flex items-center gap-3 font-bold">
             <ShieldAlert size={18} />
             {error}
@@ -528,7 +538,7 @@ export default function RewardsGrid() {
           </button>
         </div>
       ) : filteredRewards.length > 0 ? (
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {filteredRewards.map((reward) => (
             <RewardCard
               key={reward.reward_id}
@@ -540,47 +550,32 @@ export default function RewardsGrid() {
           ))}
         </div>
       ) : (
-        <div className="rounded-3xl border border-dashed border-slate-200 bg-white p-12 text-center text-slate-500">
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-12 text-center text-slate-500">
           <Gift size={36} className="mx-auto text-slate-300" />
           <p className="mt-4 text-lg font-bold text-slate-800">
-            Tidak ada reward yang cocok dengan filter ini.
+            {filter === "Bisa Ditukar"
+              ? "Belum ada reward yang bisa ditukar dengan poinmu saat ini."
+              : "Tidak ada reward yang cocok dengan filter ini."}
           </p>
           <p className="mt-1 text-sm">
-            Coba ganti filter atau buka reward lain yang masih aktif.
+            Coba ganti filter atau kumpulkan lebih banyak poin.
           </p>
         </div>
       )}
 
-      <AlertDialog
-        open={Boolean(pendingReward)}
-        onOpenChange={(open) => {
-          if (!open) setPendingReward(null);
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Konfirmasi penukaran poin</AlertDialogTitle>
-            <AlertDialogDescription>
-              {pendingReward
-                ? `Tukar ${formatPoints(pendingReward.poin_dibutuhkan)} poin untuk "${pendingReward.nama_reward}"? Jika Anda menekan Ya, reward akan langsung diproses dan stok berkurang.`
-                : "Konfirmasi penukaran reward ini."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (pendingReward) {
-                  void executeRedeem(pendingReward);
-                }
-              }}
-              className="bg-emerald-600 text-white hover:bg-emerald-700"
-            >
-              Ya, tukar poin
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* ── Confirmation Modal ── */}
+      {pendingReward && (
+        <ConfirmRedeemModal
+          reward={pendingReward}
+          userPoints={userPoints}
+          onConfirm={() => {
+            if (pendingReward) {
+              void executeRedeem(pendingReward);
+            }
+          }}
+          onCancel={() => setPendingReward(null)}
+        />
+      )}
     </div>
   );
 }

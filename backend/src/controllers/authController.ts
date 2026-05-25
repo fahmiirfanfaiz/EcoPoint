@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { prisma } from "../lib/prisma.js";
+import { getTodayWIB } from "../lib/dateUtils.js";
 import { AuthRequest } from "../middleware/auth.js";
 
 const SALT_ROUNDS = 10;
@@ -107,8 +108,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     // ── Auto-progress login_streak challenges ──────────────
     try {
-      const now = new Date();
-      const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+      const today = getTodayWIB();
 
       // Ensure today's challenges exist (auto-pick if not yet assigned)
       const existingToday = await prisma.challenge_of_the_day.findMany({
