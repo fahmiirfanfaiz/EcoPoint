@@ -10,6 +10,7 @@ interface UpdateItem {
 
 interface RecentUpdatesProps {
   updates?: UpdateItem[];
+  className?: string;
 }
 
 function timeAgo(dateStr: string): string {
@@ -38,9 +39,9 @@ function getNotifStyle(pesan: string) {
   return { bg: "bg-blue-100", color: "text-blue-600" };
 }
 
-const RecentUpdates: React.FC<RecentUpdatesProps> = ({ updates = [] }) => (
+const RecentUpdates: React.FC<RecentUpdatesProps> = ({ updates = [], className = "" }) => (
   <div
-    className="rounded-[32px] bg-white p-6"
+    className={`rounded-[32px] bg-white p-6 flex flex-col ${className}`}
     style={{
       outline: "1px #ECFDF5 solid",
       outlineOffset: "-1px",
@@ -55,7 +56,7 @@ const RecentUpdates: React.FC<RecentUpdatesProps> = ({ updates = [] }) => (
 
     {/* Items */}
     {updates.length === 0 ? (
-      <div className="flex flex-col items-center gap-2 py-8">
+      <div className="flex flex-col items-center justify-center gap-2 py-8 flex-1">
         <span className="text-4xl">🔔</span>
         <p className="font-quicksand text-sm font-semibold text-gray-400">Belum ada notifikasi</p>
         <p className="font-outfit text-xs text-gray-400">Notifikasi terbaru akan muncul di sini.</p>
