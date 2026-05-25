@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 const AI_SERVICE_URL =
   process.env.AI_SERVICE_URL ??
   process.env.NEXT_PUBLIC_AI_SERVICE_URL ??
-  "http://localhost:8000";
+  "https://ecopoint-ai-dqfhgxbbb6f8fafv.southeastasia-01.azurewebsites.net/";
 const AI_SERVICE_API_KEY = process.env.AI_SERVICE_API_KEY ?? "";
 
 export const runtime = "nodejs";
