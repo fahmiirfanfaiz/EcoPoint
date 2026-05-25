@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { API_BASE_URL } from "@/lib/auth";
+import { API_BASE_URL, getBearerToken } from "@/lib/auth";
 import { getAvatarUrl } from "@/components/dashboard/EditProfileModal";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -97,13 +97,13 @@ export default function LeaderboardKampus() {
         setLeaderboardData(data.leaderboard);
 
         // Try to track daily challenge action
-        const token = localStorage.getItem("token");
-        if (token) {
+        const bearer = getBearerToken();
+        if (bearer) {
           fetch(`${API_BASE_URL}/daily-challenges/track-action`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`
+              Authorization: bearer
             },
             body: JSON.stringify({ action: "view_leaderboard" })
           }).catch(() => {});
