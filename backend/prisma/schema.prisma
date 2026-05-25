@@ -35,13 +35,14 @@ model notifications {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model redemptions {
-  redemption_id  String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id        String   @db.Uuid
-  reward_id      String   @db.Uuid
+  redemption_id  String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id        String    @db.Uuid
+  reward_id      String    @db.Uuid
   poin_digunakan BigInt
-  redeemed_at    DateTime @default(now()) @db.Timestamp(6)
-  rewards        rewards  @relation(fields: [reward_id], references: [reward_id])
-  users          users    @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  redeemed_at    DateTime  @default(now()) @db.Timestamp(6)
+  used_at        DateTime? @db.Timestamptz(6)
+  rewards        rewards   @relation(fields: [reward_id], references: [reward_id])
+  users          users     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
 
   @@id([redemption_id, user_id, reward_id])
 }
