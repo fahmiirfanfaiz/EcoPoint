@@ -24,7 +24,8 @@ import {
   Gift,
 } from "lucide-react";
 
-const API = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api";
+const API =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://api-ecopoint.vercel.app/api";
 
 interface TodayChallengeItem {
   challenge_of_the_day_id: string;

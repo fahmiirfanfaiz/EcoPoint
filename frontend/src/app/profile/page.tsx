@@ -11,7 +11,8 @@ import RecentAchievements from "@/components/dashboard/RecentAchievements";
 import RecentUpdates from "@/components/dashboard/RecentUpdates";
 import DailyChallenges from "@/components/dashboard/DailyChallenges";
 
-const API = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api";
+const API =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://api-ecopoint.vercel.app/api";
 
 interface DashboardData {
   stats: {

@@ -59,7 +59,8 @@ interface DailyChallengesProps {
   onClose: () => void;
 }
 
-const API = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api";
+const API =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://api-ecopoint.vercel.app/api";
 
 const DailyChallenges: React.FC<DailyChallengesProps> = ({
   isOpen,

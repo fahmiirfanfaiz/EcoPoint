@@ -71,7 +71,8 @@ const Navbar: React.FC = () => {
     const auth = getStoredAuth();
     if (auth?.token) {
       const API =
-        process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api";
+        process.env.NEXT_PUBLIC_API_BASE_URL ??
+        "https://api-ecopoint.vercel.app/api";
       fetch(`${API}/auth/me`, {
         headers: { Authorization: `Bearer ${auth.token}` },
       })
