@@ -145,7 +145,8 @@ const Navbar: React.FC = () => {
           throw new Error("Failed to load recent updates");
         }
 
-        const payload: { recent_updates?: RecentUpdate[] } = await response.json();
+        const payload: { recent_updates?: RecentUpdate[] } =
+          await response.json();
         setRecentUpdates(payload.recent_updates ?? []);
       } catch (error) {
         console.error("Error loading recent updates:", error);
@@ -219,10 +220,13 @@ const Navbar: React.FC = () => {
                   <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-gray-400">
                     Notifications
                   </p>
-                  <p className="mt-1 text-sm font-bold text-gray-900">Recent Updates</p>
+                  <p className="mt-1 text-sm font-bold text-gray-900">
+                    Recent Updates
+                  </p>
                 </div>
                 <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
-                  {recentUpdates.filter((update) => !update.is_read).length} unread
+                  {recentUpdates.filter((update) => !update.is_read).length}{" "}
+                  unread
                 </div>
               </div>
 
@@ -230,7 +234,10 @@ const Navbar: React.FC = () => {
                 {updatesLoading ? (
                   <div className="space-y-3 p-2">
                     {[1, 2, 3].map((item) => (
-                      <div key={item} className="flex gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-3">
+                      <div
+                        key={item}
+                        className="flex gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-3"
+                      >
                         <div className="h-10 w-10 rounded-full bg-gray-200 animate-pulse" />
                         <div className="flex-1 space-y-2">
                           <div className="h-3 w-3/4 rounded bg-gray-200 animate-pulse" />
@@ -242,9 +249,12 @@ const Navbar: React.FC = () => {
                 ) : recentUpdates.length === 0 ? (
                   <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-6 py-10 text-center">
                     <Bell size={20} className="text-gray-400" />
-                    <p className="mt-3 text-sm font-bold text-gray-900">Belum ada notifikasi</p>
+                    <p className="mt-3 text-sm font-bold text-gray-900">
+                      Belum ada notifikasi
+                    </p>
                     <p className="mt-1 text-xs leading-5 text-gray-500">
-                      Update terbaru akan muncul di sini setelah aktivitas pengguna terjadi.
+                      Update terbaru akan muncul di sini setelah aktivitas
+                      pengguna terjadi.
                     </p>
                   </div>
                 ) : (
@@ -254,8 +264,14 @@ const Navbar: React.FC = () => {
                         key={update.notifications_id}
                         className={`flex gap-3 rounded-2xl p-3 transition-colors ${update.is_read ? "bg-white" : "bg-emerald-50/60"}`}
                       >
-                        <div className={`mt-0.5 flex h-10 w-10 items-center justify-center rounded-full ${update.is_read ? "bg-gray-100 text-gray-500" : "bg-emerald-100 text-emerald-700"}`}>
-                          {update.is_read ? <Circle size={14} /> : <CheckCircle2 size={14} />}
+                        <div
+                          className={`mt-0.5 flex h-10 w-10 items-center justify-center rounded-full ${update.is_read ? "bg-gray-100 text-gray-500" : "bg-emerald-100 text-emerald-700"}`}
+                        >
+                          {update.is_read ? (
+                            <Circle size={14} />
+                          ) : (
+                            <CheckCircle2 size={14} />
+                          )}
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-2">
