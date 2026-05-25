@@ -121,15 +121,15 @@ export default function ProfilePage() {
       />
 
       {/* 2-Column Layout */}
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_380px]">
+      <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-[1fr_380px]">
         {/* Left */}
         <div className="flex flex-col gap-6">
           <WeeklyActivity data={data?.weekly_activity} />
           <RecentAchievements achievements={data?.recent_achievements} />
         </div>
         {/* Right */}
-        <div>
-          <RecentUpdates updates={data?.recent_updates} />
+        <div className="flex flex-col">
+          <RecentUpdates updates={data?.recent_updates} className="flex-1" />
         </div>
       </div>
 

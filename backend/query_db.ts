@@ -15,7 +15,17 @@ async function main() {
   console.log('BADGES:');
   console.table(res2.rows);
 
+  const res3 = await client.query(`
+    SELECT cotd.id as cotd_id, cotd.tanggal, dc.nama_challenge, dc.challenge_type, dc.is_active, dc.is_permanent 
+    FROM challenge_of_the_day cotd
+    JOIN daily_challenges dc ON cotd.challenge_id = dc.challenge_id
+    WHERE cotd.tanggal = CURRENT_DATE
+  `);
+  console.log('TODAY\'S CHALLENGES OF THE DAY:');
+  console.table(res3.rows);
+
   await client.end();
 }
 
 main().catch(console.error);
+
