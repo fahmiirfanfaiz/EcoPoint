@@ -1,8 +1,29 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { getStoredAuth } from "@/lib/auth";
+
 interface RewardsStoreBannerProps {
   balance?: number;
 }
 
-export default function RewardsStoreBanner({ balance = 1250 }: RewardsStoreBannerProps) {
+export default function RewardsStoreBanner({ balance }: RewardsStoreBannerProps) {
+  const [currentBalance, setCurrentBalance] = useState<number>(() => {
+    if (typeof balance === "number") return balance;
+    return getStoredAuth()?.user.total_poin ?? 0;
+  });
+
+  useEffect(() => {
+    const syncBalance = () => {
+      const storedBalance = getStoredAuth()?.user.total_poin ?? 0;
+      setCurrentBalance(typeof balance === "number" ? balance : storedBalance);
+    };
+
+    syncBalance();
+    window.addEventListener("ecopoint-auth-changed", syncBalance);
+    return () => window.removeEventListener("ecopoint-auth-changed", syncBalance);
+  }, [balance]);
+
   return (
     <div className="font-nunito w-full">
       <div
@@ -68,7 +89,7 @@ export default function RewardsStoreBanner({ balance = 1250 }: RewardsStoreBanne
 
         {/* ── Right: Balance card ── */}
         <div
-          className="flex flex-col items-center justify-center flex-shrink-0 z-10"
+          className="flex shrink-0 flex-col items-center justify-center z-10"
           style={{
             background: "rgba(255,255,255,0.18)",
             backdropFilter: "blur(10px)",
@@ -124,7 +145,7 @@ export default function RewardsStoreBanner({ balance = 1250 }: RewardsStoreBanne
                 lineHeight: 1,
               }}
             >
-              {balance.toLocaleString("id-ID")}
+              {currentBalance.toLocaleString("id-ID")}
             </span>
           </div>
 
