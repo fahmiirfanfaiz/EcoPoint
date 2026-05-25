@@ -1,6 +1,7 @@
 import { Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { AuthRequest } from "../middleware/auth.js";
+import { getStartOfWeekWIB, getStartOfDayWIB } from "../lib/dateUtils.js";
 
 /**
  * GET /api/dashboard
@@ -59,7 +60,7 @@ export const getDashboard = async (
         where: {
           user_id: userId,
           created_at: {
-            gte: getStartOfWeek(),
+            gte: getStartOfWeekWIB(),
           },
         },
         select: {
@@ -109,8 +110,10 @@ export const getDashboard = async (
     const weeklyActivity = dayNames.map((day, index) => {
       const count = weeklyReports.filter(
         (r: (typeof weeklyReports)[number]) => {
-          const reportDay = r.created_at.getDay();
-          // JS getDay(): 0=Sun, 1=Mon ... 6=Sat → remap to Mon=0 ... Sun=6
+          // Shift created_at to WIB by adding 7 hours
+          const wibTime = new Date(r.created_at.getTime() + 7 * 60 * 60 * 1000);
+          const reportDay = wibTime.getUTCDay();
+          // JS getUTCDay(): 0=Sun, 1=Mon ... 6=Sat → remap to Mon=0 ... Sun=6
           const mappedDay = reportDay === 0 ? 6 : reportDay - 1;
           return mappedDay === index;
         },
@@ -165,8 +168,7 @@ export const getDashboard = async (
     }
 
     // ── Update Login Streak ──
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = getStartOfDayWIB();
 
     let streakUpdated = false;
     let newStreak: number = Number(user.current_login_streak) || 0;
@@ -176,8 +178,7 @@ export const getDashboard = async (
       newStreak = 1;
       streakUpdated = true;
     } else {
-      const lastLogin = new Date(user.last_login_date);
-      lastLogin.setHours(0, 0, 0, 0);
+      const lastLogin = getStartOfDayWIB(user.last_login_date);
 
       const diffTime = Math.abs(today.getTime() - lastLogin.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));

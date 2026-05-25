@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { getStoredAuth } from "@/lib/auth";
-import { ArrowDown } from "lucide-react";
 
 interface RewardsStoreBannerProps {
   balance?: number;
@@ -77,7 +76,7 @@ export default function RewardsStoreBanner({
               margin: 0,
             }}
           >
-            Rewards Store
+            Tukar Poin
           </h2>
           <p
             style={{
@@ -87,22 +86,8 @@ export default function RewardsStoreBanner({
               fontWeight: 500,
             }}
           >
-            Redeem your hard-earned points for exclusive campus perks.
+            Tukarkan poin EcoPoint-mu dengan reward eksklusif di kampus.
           </p>
-
-          <button
-            type="button"
-            onClick={() => {
-              document.getElementById("reward-catalog")?.scrollIntoView({
-                behavior: "smooth",
-                block: "start",
-              });
-            }}
-            className="mt-4 inline-flex w-fit items-center gap-2 rounded-full border border-white/30 bg-white/15 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-white/20"
-          >
-            <ArrowDown size={14} />
-            Lihat reward
-          </button>
         </div>
 
         {/* ── Right: Balance card ── */}
@@ -114,8 +99,8 @@ export default function RewardsStoreBanner({
             WebkitBackdropFilter: "blur(10px)",
             border: "1px solid rgba(255,255,255,0.3)",
             borderRadius: 14,
-            padding: "12px 20px",
-            minWidth: 150,
+            padding: "14px 24px",
+            minWidth: 200,
             textAlign: "center",
           }}
         >
@@ -130,32 +115,22 @@ export default function RewardsStoreBanner({
               marginBottom: 4,
             }}
           >
-            Current Balance
+            Saldo Kamu
           </span>
 
           {/* Icon + Amount */}
           <div className="flex items-center gap-1.5">
-            {/* Piggy bank / coin icon */}
+            {/* Coin icon (consistent with Navbar & StatsCards) */}
             <svg
-              viewBox="0 0 24 24"
+              width="22"
+              height="22"
+              viewBox="0 0 25 24"
               fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              style={{ width: 22, height: 22, flexShrink: 0 }}
+              style={{ flexShrink: 0 }}
             >
-              <circle cx="12" cy="12" r="10" fill="#fbbf24" />
-              <circle cx="12" cy="12" r="7" fill="#fcd34d" />
-              {/* leaf/eco mark */}
               <path
-                d="M10 14c1-2 3-3.5 4-2s-1 3.5-4 2z"
-                fill="#16a34a"
-                stroke="#15803d"
-                strokeWidth="0.5"
-              />
-              <path
-                d="M12 15v-4"
-                stroke="#15803d"
-                strokeWidth="1"
-                strokeLinecap="round"
+                d="M12.5 2C6.98 2 2.5 6.48 2.5 12s4.48 10 10 10 10-4.48 10-10S18.02 2 12.5 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.22V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.94s4.18 1.36 4.18 3.85c0 1.89-1.44 2.88-3.12 3.19z"
+                fill="#fbbf24"
               />
             </svg>
 

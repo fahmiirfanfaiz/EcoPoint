@@ -496,9 +496,11 @@ export default function BerandaPage() {
                     className="flex flex-1 flex-col items-center gap-2"
                   >
                     <div
-                      className="relative w-full max-w-[48px] bg-slate-50 rounded-t-xl overflow-hidden"
+                      className="relative w-full max-w-[48px]"
                       style={{ height: "120px" }}
                     >
+                      {/* Bar background */}
+                      <div className="absolute inset-0 bg-slate-50 rounded-t-xl" />
                       <div
                         className="absolute bottom-0 w-full rounded-t-xl transition-all duration-500"
                         style={{

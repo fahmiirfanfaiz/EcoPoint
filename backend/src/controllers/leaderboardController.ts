@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { cache } from "../lib/cache.js";
+import { getStartOfWeekWIB } from "../lib/dateUtils.js";
 
 /**
  * GET /api/leaderboard
@@ -74,10 +75,7 @@ export const getLeaderboard = async (
     });
 
     if (period === "mingguan") {
-      const now = new Date();
-      // Start of current week (Sunday)
-      const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
-      startOfWeek.setHours(0, 0, 0, 0);
+      const startOfWeek = getStartOfWeekWIB();
 
       // 1. Get weekly waste report points
       const weeklyReports = await prisma.waste_reports.groupBy({

@@ -834,12 +834,14 @@ export const trackAction = async (
 //  HELPER
 // ═══════════════════════════════════════════════════════════
 
+import { getTodayWIB } from "../lib/dateUtils.js";
+
 /**
- * Returns today's date as a Date object with time set to 00:00:00 UTC.
+ * Returns today's date as a Date object with time set to 00:00:00 UTC,
+ * based on Jakarta timezone (WIB).
  */
 function getTodayDate(): Date {
-  const now = new Date();
-  return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  return getTodayWIB();
 }
 
 export default {
