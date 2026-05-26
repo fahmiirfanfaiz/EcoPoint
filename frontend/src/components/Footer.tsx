@@ -14,7 +14,7 @@ const Footer: React.FC = () => {
   return (
     <footer className="font-nunito w-full bg-white border-t border-gray-100 mt-auto">
       <div className="mx-auto flex w-full max-w-[1280px] h-20 items-center justify-between px-6">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-1 items-center gap-2">
           <Image
             src="/Logo/Logo.svg"
             alt="EcoPoint Campus Logo"
@@ -24,13 +24,13 @@ const Footer: React.FC = () => {
           <span className="hidden sm:inline font-bold text-gray-800">EcoPoint Campus</span>
         </div>
 
-        <div className="flex gap-6 justify-center text-slate-500 font-bold text-sm">
+        <div className="flex flex-1 gap-6 justify-center text-slate-500 font-bold text-sm">
           <span className="cursor-pointer hover:text-emerald-600 transition-colors">Privacy</span>
           <span className="cursor-pointer hover:text-emerald-600 transition-colors">Terms</span>
           <span className="cursor-pointer hover:text-emerald-600 transition-colors">Contact</span>
         </div>
 
-        <div>
+        <div className="flex flex-1 justify-end">
           <span className="text-slate-400 text-[0.65rem] sm:text-sm">© 2026 EcoPoint Campus. Let&apos;s grow together.</span>
         </div>
       </div>
