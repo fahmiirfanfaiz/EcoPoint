@@ -42,7 +42,7 @@ const WeeklyActivity: React.FC<WeeklyActivityProps> = ({ data }) => {
             <rect x="6" y="5" width="3" height="10" rx="1" fill="#10B981" />
             <rect x="11" y="2" width="3" height="13" rx="1" fill="#10B981" />
           </svg>
-          <span className="font-quicksand text-lg font-bold leading-7 text-gray-800">Weekly Recycling Activity</span>
+          <span className="font-quicksand text-lg font-bold leading-7 text-gray-800">Aktivitas Daur Ulang Mingguan</span>
         </div>
         <div className="flex items-center gap-1 rounded-lg bg-emerald-50 px-3 py-1">
           <span className="font-outfit text-xs leading-4 text-emerald-800">{totalReports} laporan</span>
