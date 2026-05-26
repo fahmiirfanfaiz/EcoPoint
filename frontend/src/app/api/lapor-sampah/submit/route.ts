@@ -276,6 +276,18 @@ export async function POST(request: Request) {
       // Non-fatal, continue
     }
 
+    // Create notification for the user
+    try {
+      await supabaseAdmin.from("notifications").insert({
+        user_id: userId,
+        pesan: `Laporan sampah (${kategoriUserStr}) berhasil dikirim! Menunggu validasi admin.`,
+        tipe: "system",
+      });
+    } catch (e) {
+      console.error("Failed to create notification:", e);
+      // Non-fatal, continue
+    }
+
     return NextResponse.json(
       {
         ok: true,

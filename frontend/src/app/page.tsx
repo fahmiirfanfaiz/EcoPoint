@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Camera, BrainCircuit, Gift, Download, Trophy, Play } from "lucide-react";
+import { Camera, BrainCircuit, Gift, Trophy, Play } from "lucide-react";
 import RedirectIfLoggedIn from "@/components/auth/RedirectIfLoggedIn";
 
 export default function HomePage() {
@@ -138,19 +138,18 @@ export default function HomePage() {
               Join the thousands of students making our campus green, one snap at a time.
             </p>
             
-            <div className="flex flex-col sm:flex-row items-center gap-4 relative z-10 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10 w-full sm:w-auto">
               <Link 
                 href="/register" 
-                className="w-full sm:w-auto px-8 py-4 bg-white rounded-full text-emerald-600 text-lg font-bold flex items-center justify-center gap-2 hover:bg-emerald-50 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-emerald-600/20"
+                className="w-full sm:w-auto px-8 py-4 bg-white rounded-full text-emerald-600 text-lg font-bold flex items-center justify-center hover:bg-emerald-50 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-emerald-600/20"
               >
-                <Download size={20} strokeWidth={2.5} />
-                Download the App
+                Daftar Sekarang
               </Link>
               <Link 
                 href="/login" 
-                className="w-full sm:w-auto px-8 py-4 bg-emerald-600 rounded-full text-white text-lg font-bold flex items-center justify-center hover:bg-emerald-700 hover:scale-105 active:scale-95 transition-all"
+                className="w-full sm:w-auto px-8 py-4 bg-emerald-600 rounded-full text-white text-lg font-bold flex items-center justify-center hover:bg-emerald-700 hover:scale-105 active:scale-95 transition-all border-2 border-emerald-400/50"
               >
-                View Leaderboard
+                Masuk
               </Link>
             </div>
 

@@ -276,7 +276,7 @@ export default function BerandaPage() {
 
         {/* Mini Stats in Hero */}
         {stats && (
-          <div className="relative z-10 mt-8 grid grid-cols-3 gap-4">
+          <div className="relative z-10 mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
               {
                 icon: () => (
@@ -384,12 +384,12 @@ export default function BerandaPage() {
                   return (
                     <div
                       key={c.challenge_of_the_day_id}
-                      className={`flex items-center gap-4 rounded-2xl p-4 transition-all ${isFullyDone ? "bg-slate-50/70 opacity-60 grayscale-[0.5]" : done ? "bg-emerald-50 outline outline-1 outline-emerald-200 shadow-sm" : "bg-gray-50 hover:bg-gray-100/70"}`}
+                      className={`flex items-center gap-3 sm:gap-4 rounded-2xl p-3 sm:p-4 transition-all ${isFullyDone ? "bg-slate-50/70 opacity-60 grayscale-[0.5]" : done ? "bg-emerald-50 outline outline-1 outline-emerald-200 shadow-sm" : "bg-gray-50 hover:bg-gray-100/70"}`}
                     >
                       <div
-                        className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl ${ci.bg} ${ci.color}`}
+                        className={`flex h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 items-center justify-center rounded-xl sm:rounded-2xl ${ci.bg} ${ci.color}`}
                       >
-                        <Icon size={22} />
+                        <Icon size={20} className="sm:w-[22px] sm:h-[22px]" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p
@@ -481,7 +481,7 @@ export default function BerandaPage() {
               </span>
             </div>
             <div
-              className="flex flex-1 items-end justify-around gap-2 px-2"
+              className="flex flex-1 items-end justify-around gap-1 sm:gap-2 px-1 sm:px-2 overflow-x-auto pb-2"
               style={{ minHeight: "160px" }}
             >
               {weeklyActivity.map((w) => {
@@ -493,10 +493,10 @@ export default function BerandaPage() {
                 return (
                   <div
                     key={w.day}
-                    className="flex flex-1 flex-col items-center gap-2"
+                    className="flex flex-1 flex-col items-center gap-2 min-w-[24px]"
                   >
                     <div
-                      className="relative w-full max-w-[48px]"
+                      className="relative w-full max-w-[28px] sm:max-w-[48px]"
                       style={{ height: "120px" }}
                     >
                       {/* Bar background */}

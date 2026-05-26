@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma.js";
+import { createNotification } from "./notificationService.js";
 
 /**
  * Service to evaluate and award achievements for a user based on dynamic rules.
@@ -86,6 +87,12 @@ export const evaluateUserAchievements = async (userId: string) => {
           badges_id: badge.badges_id,
         },
       });
+
+      // Send notification for new badge
+      await createNotification(
+        userId,
+        `Selamat! Kamu mendapatkan badge baru: "${badge.nama_badge}"`,
+      );
       
       console.log(`Awarded badge "${badge.nama_badge}" to user ${userId}`);
     }
