@@ -8,6 +8,7 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
+import RedirectIfLoggedIn from "@/components/auth/RedirectIfLoggedIn";
 
 const highlightCards = [
   {
@@ -56,8 +57,9 @@ const steps = [
 
 export default function HomePage() {
   return (
-    <main className="overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.16),_transparent_38%),linear-gradient(180deg,_#f0fdf4_0%,_#ffffff_52%,_#f8fafc_100%)]">
-      <section className="mx-auto flex w-full max-w-[1280px] flex-col gap-10 px-6 py-14 lg:flex-row lg:items-center lg:py-20">
+    <RedirectIfLoggedIn>
+      <main className="overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.16),_transparent_38%),linear-gradient(180deg,_#f0fdf4_0%,_#ffffff_52%,_#f8fafc_100%)]">
+        <section className="mx-auto flex w-full max-w-[1280px] flex-col gap-10 px-6 py-14 lg:flex-row lg:items-center lg:py-20">
         <div className="max-w-2xl space-y-6">
           <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm backdrop-blur">
             <Sparkles size={16} />
@@ -209,6 +211,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-    </main>
+      </main>
+    </RedirectIfLoggedIn>
   );
 }
