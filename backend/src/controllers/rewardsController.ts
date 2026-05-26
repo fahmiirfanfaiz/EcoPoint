@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { AuthRequest } from "../middleware/auth.js";
+import { createNotification } from "../services/notificationService.js";
 
 const parseBigIntInput = (value: unknown, fallback: bigint): bigint => {
   if (typeof value === "bigint") return value;
@@ -156,6 +157,12 @@ export const redeemReward = async (
       trackAction(reqSimulated, resSimulated).catch(console.error);
     });
 
+    // Send notification
+    await createNotification(
+      userId,
+      `Kamu berhasil menukarkan ${result.reward_name}! -${result.poin_digunakan} poin.`,
+    );
+
     res.status(200).json({
       message: "Reward berhasil ditukar!",
       data: result,
@@ -283,6 +290,12 @@ export const useReward = async (
         used_at: new Date(),
       },
     });
+
+    // Send notification (fire-and-forget after response)
+    createNotification(
+      userId,
+      `Reward "${redemption.rewards.nama_reward}" telah ditandai sebagai digunakan.`,
+    ).catch(console.error);
   } catch (error) {
     console.error("Use reward error:", error);
     res.status(500).json({ message: "Internal server error" });

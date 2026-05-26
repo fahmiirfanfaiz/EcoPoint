@@ -1,6 +1,7 @@
 import { Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { AuthRequest } from "../middleware/auth.js";
+import { createNotification } from "../services/notificationService.js";
 
 /**
  * GET /api/admin/waste-reports
@@ -181,6 +182,12 @@ export const approveReport = async (
       evaluateUserAchievements(report.user_id).catch(console.error);
     });
 
+    // Send notification to the user
+    await createNotification(
+      report.user_id,
+      `Laporan sampah kamu telah disetujui! +${pointsToAdd} poin ditambahkan.`,
+    );
+
     res.status(200).json({
       success: true,
       message: `Laporan diapprove. +${pointsToAdd} poin ditambahkan ke user.`,
@@ -230,6 +237,12 @@ export const rejectReport = async (
       },
       data: { status_validasi: "rejected" },
     });
+
+    // Send notification to the user
+    await createNotification(
+      report.user_id,
+      `Laporan sampah kamu ditolak oleh admin.`,
+    );
 
     res.status(200).json({
       success: true,

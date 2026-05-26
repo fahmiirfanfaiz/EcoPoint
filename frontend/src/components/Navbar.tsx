@@ -137,19 +137,19 @@ const Navbar: React.FC = () => {
 
       setUpdatesLoading(true);
       try {
-        const response = await fetch(`${API_BASE_URL}/dashboard`, {
+        const response = await fetch(`${API_BASE_URL}/notifications`, {
           headers: { Authorization: token },
         });
 
         if (!response.ok) {
-          throw new Error("Failed to load recent updates");
+          throw new Error("Failed to load notifications");
         }
 
-        const payload: { recent_updates?: RecentUpdate[] } =
+        const payload: { notifications?: RecentUpdate[]; unread_count?: number } =
           await response.json();
-        setRecentUpdates(payload.recent_updates ?? []);
+        setRecentUpdates(payload.notifications ?? []);
       } catch (error) {
-        console.error("Error loading recent updates:", error);
+        console.error("Error loading notifications:", error);
         setRecentUpdates([]);
       } finally {
         setUpdatesLoading(false);
@@ -158,6 +158,42 @@ const Navbar: React.FC = () => {
 
     void loadRecentUpdates();
   }, [isAuthenticated]);
+
+  const handleMarkAllRead = async () => {
+    const token = getBearerToken();
+    if (!token) return;
+
+    try {
+      await fetch(`${API_BASE_URL}/notifications/read-all`, {
+        method: "PATCH",
+        headers: { Authorization: token },
+      });
+      setRecentUpdates((prev) =>
+        prev.map((u) => ({ ...u, is_read: true })),
+      );
+    } catch (error) {
+      console.error("Error marking all as read:", error);
+    }
+  };
+
+  const handleMarkOneRead = async (notificationId: string) => {
+    const token = getBearerToken();
+    if (!token) return;
+
+    try {
+      await fetch(`${API_BASE_URL}/notifications/${notificationId}/read`, {
+        method: "PATCH",
+        headers: { Authorization: token },
+      });
+      setRecentUpdates((prev) =>
+        prev.map((u) =>
+          u.notifications_id === notificationId ? { ...u, is_read: true } : u,
+        ),
+      );
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
+  };
 
   const handleLogout = () => {
     clearStoredAuth();
@@ -224,9 +260,19 @@ const Navbar: React.FC = () => {
                     Recent Updates
                   </p>
                 </div>
-                <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
-                  {recentUpdates.filter((update) => !update.is_read).length}{" "}
-                  unread
+                <div className="flex items-center gap-2">
+                  {recentUpdates.some((u) => !u.is_read) && (
+                    <button
+                      onClick={handleMarkAllRead}
+                      className="rounded-full bg-gray-100 px-3 py-1 text-[10px] font-bold text-gray-500 hover:bg-gray-200 transition-colors"
+                    >
+                      Tandai semua dibaca
+                    </button>
+                  )}
+                  <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+                    {recentUpdates.filter((update) => !update.is_read).length}{" "}
+                    unread
+                  </div>
                 </div>
               </div>
 
@@ -262,10 +308,15 @@ const Navbar: React.FC = () => {
                     {recentUpdates.map((update) => (
                       <div
                         key={update.notifications_id}
-                        className={`flex gap-3 rounded-2xl p-3 transition-colors ${update.is_read ? "bg-white" : "bg-emerald-50/60"}`}
+                        className={`flex gap-3 rounded-2xl p-3 transition-colors ${update.is_read ? "bg-white" : "bg-emerald-50/60 cursor-pointer hover:bg-emerald-50"}`}
+                        onClick={() => {
+                          if (!update.is_read) {
+                            handleMarkOneRead(update.notifications_id);
+                          }
+                        }}
                       >
                         <div
-                          className={`mt-0.5 flex h-10 w-10 items-center justify-center rounded-full ${update.is_read ? "bg-gray-100 text-gray-500" : "bg-emerald-100 text-emerald-700"}`}
+                          className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${update.is_read ? "bg-gray-100 text-gray-500" : "bg-emerald-100 text-emerald-700"}`}
                         >
                           {update.is_read ? (
                             <Circle size={14} />
@@ -279,7 +330,7 @@ const Navbar: React.FC = () => {
                               {update.pesan}
                             </p>
                             {!update.is_read && (
-                              <span className="mt-0.5 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+                              <span className="mt-0.5 shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
                                 New
                               </span>
                             )}

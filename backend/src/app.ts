@@ -11,6 +11,7 @@ import dailyChallengeRoutes from "./routes/dailyChallengeRoute.js";
 import levelRoutes from "./routes/levelRoute.js";
 import usersRoutes from "./routes/usersRoute.js";
 import wasteReportRoutes from "./routes/wasteReportRoute.js";
+import { notificationUserRoutes, notificationAdminRoutes } from "./routes/notificationRoute.js";
 
 const app = express();
 const productionFrontendOrigin = "https://ecopoint-client.vercel.app";
@@ -54,6 +55,8 @@ app.use("/api/daily-challenges", dailyChallengeRoutes);
 app.use("/api/levels", levelRoutes);
 app.use("/api/admin/users", usersRoutes);
 app.use("/api/admin/waste-reports", wasteReportRoutes);
+app.use("/api/notifications", notificationUserRoutes);
+app.use("/api/admin/notifications", notificationAdminRoutes);
 
 // ── Health check ───────────────────────────────────────────
 app.get("/api/health", (_req, res) => {

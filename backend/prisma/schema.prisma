@@ -19,18 +19,13 @@ model badges {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model notifications {
-  notifications_id String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  notifications_id String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   user_id          String   @db.Uuid
   pesan            String
+  tipe             String   @default("system")
   is_read          Boolean  @default(false)
   created_at       DateTime @default(now()) @db.Timestamp(6)
-  endpoint         String   @unique
-  p256dh           String
-  auth             String
-  device           String
   users            users    @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
-
-  @@id([notifications_id, user_id])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

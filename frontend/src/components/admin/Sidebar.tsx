@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Target, Gift, Award, TrendingUp, LogOut, Home, ClipboardCheck } from "lucide-react";
+import { LayoutDashboard, Users, Target, Gift, Award, TrendingUp, LogOut, Home, ClipboardCheck, Bell } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
 
 const navItems = [
@@ -15,6 +15,7 @@ const navItems = [
   { label: "Rewards", href: "/admin/rewards", icon: Gift },
   { label: "Levels", href: "/admin/levels", icon: TrendingUp },
   { label: "Validasi Laporan", href: "/admin/validasi", icon: ClipboardCheck },
+  { label: "Notifikasi", href: "/admin/notifications", icon: Bell },
 ];
 
 export default function Sidebar() {
