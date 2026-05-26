@@ -3,6 +3,7 @@
 import React from "react";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
+
 const Footer: React.FC = () => {
   const pathname = usePathname();
 
@@ -20,7 +21,7 @@ const Footer: React.FC = () => {
             width={24}
             height={24}
           />
-          <span className="font-bold text-gray-800">EcoPoint Campus</span>
+          <span className="hidden sm:inline font-bold text-gray-800">EcoPoint Campus</span>
         </div>
 
         <div className="flex gap-6 justify-center text-slate-500 font-bold text-sm">
@@ -30,7 +31,7 @@ const Footer: React.FC = () => {
         </div>
 
         <div>
-          <span className="text-slate-400 text-sm">© 2026 EcoPoint Campus. Let&apos;s grow together.</span>
+          <span className="text-slate-400 text-[0.65rem] sm:text-sm">© 2026 EcoPoint Campus. Let&apos;s grow together.</span>
         </div>
       </div>
     </footer>
