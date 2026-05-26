@@ -97,10 +97,7 @@ const Navbar: React.FC = () => {
     // Sync user profile (points) from backend on mount
     const auth = getStoredAuth();
     if (auth?.token) {
-      const API =
-        process.env.NEXT_PUBLIC_API_BASE_URL ??
-        "https://api-ecopoint.vercel.app/api";
-      fetch(`${API}/auth/me`, {
+      fetch(`${API_BASE_URL}/auth/me`, {
         headers: { Authorization: `Bearer ${auth.token}` },
       })
         .then((r) => r.json())
@@ -127,37 +124,67 @@ const Navbar: React.FC = () => {
     };
   }, []);
 
-  useEffect(() => {
-    const loadRecentUpdates = async () => {
-      const token = getBearerToken();
-      if (!token || !isAuthenticated) {
-        setRecentUpdates([]);
-        return;
+  // ── Notification fetcher (reusable) ──────────────────────
+  const loadNotifications = useCallback(async () => {
+    const token = getBearerToken();
+    if (!token || !isAuthenticated) {
+      setRecentUpdates([]);
+      return;
+    }
+
+    setUpdatesLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/notifications`, {
+        headers: { Authorization: token },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to load notifications (${response.status})`);
       }
 
-      setUpdatesLoading(true);
-      try {
-        const response = await fetch(`${API_BASE_URL}/notifications`, {
-          headers: { Authorization: token },
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to load notifications");
-        }
-
-        const payload: { notifications?: RecentUpdate[]; unread_count?: number } =
-          await response.json();
-        setRecentUpdates(payload.notifications ?? []);
-      } catch (error) {
-        console.error("Error loading notifications:", error);
-        setRecentUpdates([]);
-      } finally {
-        setUpdatesLoading(false);
-      }
-    };
-
-    void loadRecentUpdates();
+      const payload: { notifications?: RecentUpdate[]; unread_count?: number } =
+        await response.json();
+      setRecentUpdates(payload.notifications ?? []);
+    } catch (error) {
+      console.error("[Notifications] Error:", error);
+      setRecentUpdates([]);
+    } finally {
+      setUpdatesLoading(false);
+    }
   }, [isAuthenticated]);
+
+  // Fetch on auth change
+  useEffect(() => {
+    void loadNotifications();
+  }, [loadNotifications]);
+
+  // Re-fetch on page navigation
+  useEffect(() => {
+    if (isAuthenticated) {
+      void loadNotifications();
+    }
+  }, [pathname, isAuthenticated, loadNotifications]);
+
+  // Polling every 30 seconds + re-fetch on window focus + custom event
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const interval = setInterval(() => {
+      void loadNotifications();
+    }, 30_000);
+
+    const handleFocus = () => void loadNotifications();
+    const handleCustomEvent = () => void loadNotifications();
+
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("ecopoint-notification", handleCustomEvent);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("ecopoint-notification", handleCustomEvent);
+    };
+  }, [isAuthenticated, loadNotifications]);
 
   const handleMarkAllRead = async () => {
     const token = getBearerToken();
