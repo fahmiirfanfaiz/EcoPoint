@@ -40,6 +40,7 @@ interface DashboardData {
 export default function ProfilePage() {
   const router = useRouter();
   const [showChallenges, setShowChallenges] = useState(false);
+  const [showAllBadges, setShowAllBadges] = useState(false);
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -118,6 +119,7 @@ export default function ProfilePage() {
         totalPoin={data?.stats.total_poin ?? 0}
         reportsSubmitted={data?.stats.reports_submitted ?? 0}
         badgesEarned={data?.stats.badges_earned ?? 0}
+        onBadgeClick={() => setShowAllBadges(true)}
       />
 
       {/* 2-Column Layout */}
@@ -125,7 +127,7 @@ export default function ProfilePage() {
         {/* Left */}
         <div className="flex flex-col gap-6">
           <WeeklyActivity data={data?.weekly_activity} />
-          <RecentAchievements achievements={data?.recent_achievements} />
+          <RecentAchievements achievements={data?.recent_achievements} openAllBadges={showAllBadges} onAllBadgesClosed={() => setShowAllBadges(false)} />
         </div>
         {/* Right */}
         <div className="flex flex-col">

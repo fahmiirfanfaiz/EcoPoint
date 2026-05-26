@@ -51,7 +51,7 @@ const RecentUpdates: React.FC<RecentUpdatesProps> = ({ updates = [], className =
     {/* Header */}
     <div className="mb-6 flex items-center gap-2 text-red-400">
       <Bell size={20} />
-      <span className="font-quicksand text-lg font-bold leading-7 text-gray-800">Recent Updates</span>
+      <span className="font-quicksand text-lg font-bold leading-7 text-gray-800">Notifikasi Terbaru</span>
     </div>
 
     {/* Items */}

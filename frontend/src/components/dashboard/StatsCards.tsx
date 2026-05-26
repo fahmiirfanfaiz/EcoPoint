@@ -8,16 +8,18 @@ interface StatCardProps {
   label: string;
   value: string;
   showArrow?: boolean;
+  onClick?: () => void;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ icon: Icon, iconBg, iconColor, label, value, showArrow }) => (
+const StatCard: React.FC<StatCardProps> = ({ icon: Icon, iconBg, iconColor, label, value, showArrow, onClick }) => (
   <div
-    className="flex items-center gap-4 rounded-[32px] bg-white p-6"
+    className={`flex items-center gap-4 rounded-[32px] bg-white p-6 ${onClick ? "cursor-pointer hover:bg-gray-50 transition-colors" : ""}`}
     style={{
       outline: "1px #ECFDF5 solid",
       outlineOffset: "-1px",
       boxShadow: "0px 2px 4px -1px rgba(0,0,0,0.03), 0px 4px 6px -1px rgba(0,0,0,0.05)",
     }}
+    onClick={onClick}
   >
     <div className={`flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-3xl ${iconBg} ${iconColor}`}>
       <Icon size={24} />
@@ -38,9 +40,10 @@ interface StatsCardsProps {
   totalPoin?: number;
   reportsSubmitted?: number;
   badgesEarned?: number;
+  onBadgeClick?: () => void;
 }
 
-const StatsCards: React.FC<StatsCardsProps> = ({ totalPoin = 0, reportsSubmitted = 0, badgesEarned = 0 }) => {
+const StatsCards: React.FC<StatsCardsProps> = ({ totalPoin = 0, reportsSubmitted = 0, badgesEarned = 0, onBadgeClick }) => {
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
       <StatCard
@@ -73,6 +76,7 @@ const StatsCards: React.FC<StatsCardsProps> = ({ totalPoin = 0, reportsSubmitted
         label="Badge Diraih"
         value={badgesEarned.toLocaleString()}
         showArrow
+        onClick={onBadgeClick}
       />
     </div>
   );
