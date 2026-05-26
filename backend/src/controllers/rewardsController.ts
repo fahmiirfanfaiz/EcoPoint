@@ -49,9 +49,7 @@ export const getRewards = async (
     });
 
     res.status(200).json({
-      rewards: rewards.map((r: (typeof rewards)[number]) =>
-        serializeReward(r),
-      ),
+      rewards: rewards.map((r: (typeof rewards)[number]) => serializeReward(r)),
     });
   } catch (error) {
     console.error("Get rewards error:", error);

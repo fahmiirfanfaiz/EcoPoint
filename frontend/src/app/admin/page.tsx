@@ -18,6 +18,13 @@ interface RecentUpdate {
   created_at: string;
 }
 
+interface AdminStats {
+  total_users: number;
+  active_challenges: number;
+  reports_resolved: number;
+  points_distributed: number;
+}
+
 const formatAdminTime = (value: string) => {
   const date = new Date(value);
   return date.toLocaleString("id-ID", {
@@ -29,44 +36,45 @@ const formatAdminTime = (value: string) => {
 };
 
 export default function AdminDashboard() {
+  const [recentUpdates, setRecentUpdates] = useState<RecentUpdate[]>([]);
+  const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
+  const [isLoadingUpdates, setIsLoadingUpdates] = useState(true);
+  const [updatesError, setUpdatesError] = useState<string | null>(null);
+
   const stats = [
     {
       title: "Total Users",
-      value: "1,248",
-      trend: "+12%",
+      value: adminStats?.total_users.toLocaleString("id-ID") ?? "-",
+      trend: "",
       icon: Users,
       color: "bg-blue-500",
       lightColor: "bg-blue-50",
     },
     {
       title: "Active Challenges",
-      value: "24",
-      trend: "+4%",
+      value: adminStats?.active_challenges.toLocaleString("id-ID") ?? "-",
+      trend: "",
       icon: Target,
       color: "bg-emerald-500",
       lightColor: "bg-emerald-50",
     },
     {
       title: "Reports Resolved",
-      value: "856",
-      trend: "+28%",
+      value: adminStats?.reports_resolved.toLocaleString("id-ID") ?? "-",
+      trend: "",
       icon: CheckCircle,
       color: "bg-purple-500",
       lightColor: "bg-purple-50",
     },
     {
       title: "Points Distributed",
-      value: "45K",
-      trend: "+15%",
+      value: adminStats?.points_distributed.toLocaleString("id-ID") ?? "-",
+      trend: "",
       icon: TrendingUp,
       color: "bg-orange-500",
       lightColor: "bg-orange-50",
     },
   ];
-
-  const [recentUpdates, setRecentUpdates] = useState<RecentUpdate[]>([]);
-  const [isLoadingUpdates, setIsLoadingUpdates] = useState(true);
-  const [updatesError, setUpdatesError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadRecentUpdates = async () => {
@@ -88,9 +96,12 @@ export default function AdminDashboard() {
           throw new Error(fallbackText || "Gagal memuat recent updates");
         }
 
-        const payload: { recent_updates?: RecentUpdate[] } =
+        const payload: { recent_updates?: RecentUpdate[]; admin_stats?: AdminStats } =
           await response.json();
         setRecentUpdates(payload.recent_updates ?? []);
+        if (payload.admin_stats) {
+          setAdminStats(payload.admin_stats);
+        }
       } catch (error) {
         setUpdatesError(
           error instanceof Error
@@ -139,10 +150,12 @@ export default function AdminDashboard() {
                     <Icon size={20} />
                   </div>
                 </div>
-                <div className="flex items-center gap-1 text-sm font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">
-                  <TrendingUp size={14} />
-                  {stat.trend}
-                </div>
+                {stat.trend && (
+                  <div className="flex items-center gap-1 text-sm font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">
+                    <TrendingUp size={14} />
+                    {stat.trend}
+                  </div>
+                )}
               </div>
               <div className="mt-4">
                 <h3 className="font-quicksand text-sm font-medium text-gray-500">

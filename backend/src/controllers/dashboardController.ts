@@ -218,6 +218,28 @@ export const getDashboard = async (
       });
     }
 
+    let admin_stats = undefined;
+    if (user.role.replace(/['"]+/g, "").toLowerCase() === "admin") {
+      const [total_users, active_challenges, reports_resolved, points_agg] =
+        await Promise.all([
+          prisma.users.count(),
+          prisma.daily_challenges.count({ where: { is_active: true } }),
+          prisma.waste_reports.count({
+            where: { status_validasi: "approved" },
+          }),
+          prisma.waste_reports.aggregate({
+            where: { status_validasi: "approved" },
+            _sum: { poin_didapat: true },
+          }),
+        ]);
+      admin_stats = {
+        total_users,
+        active_challenges,
+        reports_resolved,
+        points_distributed: Number(points_agg._sum.poin_didapat || 0),
+      };
+    }
+
     res.status(200).json({
       user: {
         ...user,
@@ -252,6 +274,7 @@ export const getDashboard = async (
         }),
       ),
       recent_updates: recentNotifications,
+      admin_stats,
     });
   } catch (error) {
     console.error("Dashboard error:", error);
