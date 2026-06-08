@@ -7,7 +7,7 @@ const AI_SERVICE_API_KEY = process.env.AI_SERVICE_API_KEY ?? "";
 
 export const runtime = "nodejs";
 
-const withTimeout = (url: string, init: RequestInit, timeoutMs = 25000) => {
+const withTimeout = (url: string, init: RequestInit, timeoutMs = 60000) => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -132,7 +132,7 @@ export async function POST(request: Request) {
         {
           ok: false,
           message:
-            "AI service timeout. Pastikan service Python di port 8000 sedang berjalan.",
+            "AI service timeout. Service AI mungkin sedang cold-start atau terlalu sibuk, silakan coba lagi dalam beberapa detik.",
         },
         { status: 504 },
       );

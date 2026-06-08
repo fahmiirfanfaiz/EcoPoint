@@ -556,10 +556,11 @@ export default function AdminRewards() {
             <button
               key={tab.key}
               onClick={() => setFilter(tab.key)}
-              className={`rounded-lg px-3 py-2 text-xs font-bold transition-all ${filter === tab.key
+              className={`rounded-lg px-3 py-2 text-xs font-bold transition-all ${
+                filter === tab.key
                   ? "bg-emerald-50 text-emerald-700"
                   : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
-                }`}
+              }`}
             >
               {tab.label}
             </button>
@@ -674,12 +675,13 @@ export default function AdminRewards() {
                       {/* Status Badge */}
                       <div className="w-16 hidden sm:flex justify-center">
                         <span
-                          className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${canRedeem
+                          className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                            canRedeem
                               ? "bg-emerald-50 text-emerald-700"
                               : reward.is_active
                                 ? "bg-amber-50 text-amber-700"
                                 : "bg-gray-100 text-gray-500"
-                            }`}
+                          }`}
                         >
                           {canRedeem
                             ? "Aktif"
@@ -742,7 +744,7 @@ export default function AdminRewards() {
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-50">
               Batal
-            </AlertDialogCancel>
+              </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => void handleDeleteConfirmed()}
               className="bg-rose-600 text-white hover:bg-rose-700 rounded-xl px-6"

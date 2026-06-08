@@ -168,47 +168,51 @@ export const getDashboard = async (
     }
 
     // ── Update Login Streak ──
-    const today = getStartOfDayWIB();
+    const now = new Date();
+    const wibNow = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+    const todayStr = wibNow.toISOString().split("T")[0]; // YYYY-MM-DD
+    // Prisma @db.Date maps to UTC midnight. We store the WIB date string as UTC midnight.
+    const todayDateToStore = new Date(`${todayStr}T00:00:00.000Z`);
 
     let streakUpdated = false;
     let newStreak: number = Number(user.current_login_streak) || 0;
 
-    if (!user.last_login_date) {
+    const lastLoginStr = user.last_login_date
+      ? user.last_login_date.toISOString().split("T")[0]
+      : null;
+
+    if (!lastLoginStr) {
       // First login ever
       newStreak = 1;
       streakUpdated = true;
-    } else {
-      const lastLogin = getStartOfDayWIB(user.last_login_date);
+    } else if (lastLoginStr !== todayStr) {
+      const yesterdayWib = new Date(wibNow.getTime() - 24 * 60 * 60 * 1000);
+      const yesterdayStr = yesterdayWib.toISOString().split("T")[0];
 
-      const diffTime = Math.abs(today.getTime() - lastLogin.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-      if (diffDays === 1) {
+      if (lastLoginStr === yesterdayStr) {
         // Logged in yesterday
         newStreak += 1;
         streakUpdated = true;
-      } else if (diffDays > 1) {
+      } else {
         // Missed a day
         newStreak = 1;
         streakUpdated = true;
       }
     }
 
-    let displayStreak = Number(user.current_login_streak) || 0;
-    let displayLastLogin: Date | null = user.last_login_date
-      ? new Date(user.last_login_date)
-      : null;
+    let displayStreak = streakUpdated ? newStreak : (Number(user.current_login_streak) || 0);
+    let displayLastLogin: Date | null = streakUpdated 
+      ? todayDateToStore 
+      : (user.last_login_date ? new Date(user.last_login_date) : null);
 
     if (streakUpdated) {
       await prisma.users.update({
         where: { user_id: userId },
         data: {
           current_login_streak: newStreak,
-          last_login_date: today,
+          last_login_date: todayDateToStore,
         },
       });
-      displayStreak = newStreak;
-      displayLastLogin = today;
 
       // Also trigger daily challenge for login_streak
       const reqSimulated = { ...req, body: { action: "login_streak" } } as any;
