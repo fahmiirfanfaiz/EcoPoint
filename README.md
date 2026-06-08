@@ -822,6 +822,6 @@ Poin ditambahkan ke user.total_poin
 
 ## 📄 Lisensi
 
-Proyek ini dikembangkan sebagai **Tugas Besar Senior Project** Departemen Teknik Elektro dan Teknologi Informasi (DTETI), Fakultas Teknik, Universitas Gadjah Mada.
+Proyek ini dikembangkan sebagai **Tugas Akhir Senior Project** Departemen Teknik Elektro dan Teknologi Informasi (DTETI), Fakultas Teknik, Universitas Gadjah Mada.
 
-© 2025 Kelompok 3 Serangkai — EcoPoint Team
+© 2025 Kelompok 3 Serangkai - EcoPoint
