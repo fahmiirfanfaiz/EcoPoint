@@ -7,7 +7,7 @@ import {
 } from "react";
 import Image from "next/image";
 import { getBearerToken } from "@/lib/auth";
-import { MapPin } from "lucide-react";
+import { MapPin, Bot, Clock } from "lucide-react";
 
 type Category =
   | "organik"
@@ -460,13 +460,27 @@ export default function WasteDetectionSection() {
             Laporan kamu sedang menunggu validasi admin. Poin akan ditambahkan setelah laporan disetujui.
           </p>
           <div className="flex flex-col items-center">
-          <div className="inline-flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 text-xs text-amber-700 max-w-sm mx-auto mb-6 text-left">
-            <span className="text-base">⏱️</span>
-            <span>
-              <strong>Fallback otomatis:</strong> Jika admin belum merespons dalam{" "}
-              <strong>24 jam</strong>, sistem akan otomatis memverifikasi laporan
-              berdasarkan hasil analisis AI.
-            </span>
+          <div className="relative group overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-50 via-white to-purple-50 border border-indigo-100 p-5 shadow-[0_4px_20px_-4px_rgba(99,102,241,0.1)] max-w-md mx-auto mb-8 transition-all hover:shadow-[0_8px_30px_-4px_rgba(99,102,241,0.15)] hover:-translate-y-0.5">
+            {/* Soft background glow */}
+            <div className="absolute -top-10 -right-10 w-32 h-32 bg-purple-300 rounded-full blur-[40px] opacity-20 group-hover:opacity-40 transition-opacity duration-500 pointer-events-none"></div>
+            <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-indigo-300 rounded-full blur-[40px] opacity-20 group-hover:opacity-40 transition-opacity duration-500 pointer-events-none"></div>
+            
+            <div className="relative flex items-start gap-4">
+              <div className="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-200">
+                <Bot size={24} className="drop-shadow-md" />
+              </div>
+              <div className="flex flex-col text-left pt-0.5">
+                <h3 className="text-[15px] font-extrabold text-indigo-900 flex items-center gap-2 mb-1">
+                  AI Auto-Verify 
+                  <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-200/50">
+                    <Clock size={10} /> 24 Jam
+                  </span>
+                </h3>
+                <p className="text-[13px] text-indigo-800/80 leading-relaxed font-medium">
+                  Jika admin belum merespons dalam <strong>24 jam</strong>, AI kami akan otomatis memvalidasi laporanmu berdasarkan bukti foto! ✨
+                </p>
+              </div>
+            </div>
           </div>
           <button
             onClick={resetAll}

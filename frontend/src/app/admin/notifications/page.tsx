@@ -183,10 +183,6 @@ export default function AdminNotifications() {
       {/* Header */}
       <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
         <div>
-          <p className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-black uppercase tracking-[0.22em] text-emerald-700">
-            <ShieldAlert size={12} />
-            Admin Notification Center
-          </p>
           <h1 className="mt-3 font-nunito text-3xl font-extrabold text-gray-900">
             Manajemen Notifikasi
           </h1>

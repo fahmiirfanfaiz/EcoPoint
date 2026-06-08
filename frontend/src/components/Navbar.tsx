@@ -261,7 +261,7 @@ const Navbar: React.FC = () => {
           className="relative flex items-center gap-2 rounded-full border border-gray-100 bg-white px-4 py-2 text-sm font-bold text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
         >
           <Bell size={16} className="text-emerald-600" />
-          <span>Recent Updates</span>
+          <span>Update Terbaru</span>
           <ChevronDown
             size={14}
             className={`transition-transform ${updatesDropdownOpen ? "rotate-180" : ""}`}
@@ -284,7 +284,7 @@ const Navbar: React.FC = () => {
                     Notifications
                   </p>
                   <p className="mt-1 text-sm font-bold text-gray-900">
-                    Recent Updates
+                    Update Terbaru
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
