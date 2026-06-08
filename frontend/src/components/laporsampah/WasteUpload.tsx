@@ -7,6 +7,7 @@ import {
 } from "react";
 import Image from "next/image";
 import { getBearerToken } from "@/lib/auth";
+import { MapPin } from "lucide-react";
 
 type Category =
   | "organik"
@@ -203,6 +204,9 @@ export default function WasteDetectionSection() {
   const [verifyResult, setVerifyResult] = useState<VerifyResult | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<Category>(null);
 
+  // Location state
+  const [lokasi, setLokasi] = useState("");
+
   // Loading & error states
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -226,6 +230,7 @@ export default function WasteDetectionSection() {
     setClassifyResult(null);
     setVerifyResult(null);
     setSelectedCategory(null);
+    setLokasi("");
     setAnalysisError(null);
     setVerificationError(null);
     setSubmitError(null);
@@ -372,6 +377,10 @@ export default function WasteDetectionSection() {
       if (verifyResult) {
         formData.append("verify_result", JSON.stringify(verifyResult));
       }
+      // Send optional location
+      if (lokasi.trim()) {
+        formData.append("lokasi", lokasi.trim());
+      }
 
       const response = await fetch("/api/lapor-sampah/submit", {
         method: "POST",
@@ -445,11 +454,20 @@ export default function WasteDetectionSection() {
             </svg>
           </div>
           <h2 className="text-2xl font-extrabold text-gray-800 mb-2">
-            Laporan Terkirim!
+            Laporan Terkirim! 🎉
           </h2>
-          <p className="text-gray-500 mb-6 max-w-md mx-auto">
+          <p className="text-gray-500 mb-3 max-w-md mx-auto">
             Laporan kamu sedang menunggu validasi admin. Poin akan ditambahkan setelah laporan disetujui.
           </p>
+          <div className="flex flex-col items-center">
+          <div className="inline-flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 text-xs text-amber-700 max-w-sm mx-auto mb-6 text-left">
+            <span className="text-base">⏱️</span>
+            <span>
+              <strong>Fallback otomatis:</strong> Jika admin belum merespons dalam{" "}
+              <strong>24 jam</strong>, sistem akan otomatis memverifikasi laporan
+              berdasarkan hasil analisis AI.
+            </span>
+          </div>
           <button
             onClick={resetAll}
             className="inline-flex items-center gap-2 rounded-2xl px-6 py-3 font-bold text-white transition-all duration-200 hover:opacity-90 active:scale-95"
@@ -460,6 +478,7 @@ export default function WasteDetectionSection() {
           >
             Kirim Laporan Baru
           </button>
+          </div>
         </div>
       </div>
     );
@@ -664,6 +683,28 @@ export default function WasteDetectionSection() {
                       </button>
                     );
                   })}
+                </div>
+
+                {/* ── Location Input ── */}
+                <div className="mt-1">
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                    Lokasi Sampah
+                    <span className="ml-1.5 text-[11px] font-normal text-gray-400">(opsional)</span>
+                  </label>
+                  <div className="relative">
+                    <MapPin
+                      size={16}
+                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-500 pointer-events-none"
+                    />
+                    <input
+                      type="text"
+                      value={lokasi}
+                      onChange={(e) => setLokasi(e.target.value)}
+                      placeholder="Contoh: Komplek Fakultas Teknik UGM, Jl. Grafika No.2, Yogyakarta, Sendowo, Sinduadi, Kec. Mlati, Kota Yogyakarta, Daerah Istimewa Yogyakarta 55281"
+                      maxLength={200}
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pl-9 pr-4 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-200"
+                    />
+                  </div>
                 </div>
 
                 {/* ── Submit Button (integrated) ── */}

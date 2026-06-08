@@ -26,6 +26,7 @@ interface ReportData {
   kategori_ai: string | null;
   status_validasi: string;
   poin_didapat: number;
+  lokasi: string | null;
   created_at: string;
 }
 
@@ -119,13 +120,25 @@ function StatusBadge({ status }: { status: string }) {
       bg: "bg-emerald-50 border-emerald-200",
       text: "text-emerald-700",
       icon: <CheckCircle2 size={14} />,
-      label: "Disetujui",
+      label: "Disetujui Admin",
     },
     rejected: {
       bg: "bg-rose-50 border-rose-200",
       text: "text-rose-700",
       icon: <XCircle size={14} />,
-      label: "Ditolak",
+      label: "Ditolak Admin",
+    },
+    auto_approved: {
+      bg: "bg-sky-50 border-sky-200",
+      text: "text-sky-700",
+      icon: <Sparkles size={14} />,
+      label: "Auto-Disetujui AI",
+    },
+    auto_rejected: {
+      bg: "bg-slate-100 border-slate-200",
+      text: "text-slate-600",
+      icon: <XCircle size={14} />,
+      label: "Auto-Ditolak AI",
     },
   };
 
@@ -184,6 +197,19 @@ function ReportDetail({ report }: { report: ReportData }) {
   const normalizedStatus = report.status_validasi.replace(/'/g, "").trim();
 
   // Timeline steps
+  const hoursElapsed = (Date.now() - new Date(report.created_at).getTime()) / 3600000;
+  const hoursRemaining = Math.max(0, 24 - hoursElapsed);
+  const isAutoResolved = normalizedStatus.startsWith("auto_");
+
+  const adminStepDesc = () => {
+    if (normalizedStatus === "approved") return `Disetujui admin (+${report.poin_didapat} Poin)`;
+    if (normalizedStatus === "rejected") return "Ditolak admin";
+    if (normalizedStatus === "auto_approved") return `Auto-disetujui AI (+${report.poin_didapat} Poin)`;
+    if (normalizedStatus === "auto_rejected") return "Auto-ditolak AI (bukti tidak memadai)";
+    if (hoursRemaining > 0) return `Menunggu... (fallback AI dalam ${Math.ceil(hoursRemaining)} jam)`;
+    return "Sedang diproses...";
+  };
+
   const steps = [
     {
       label: "Laporan Dikirim",
@@ -211,15 +237,10 @@ function ReportDetail({ report }: { report: ReportData }) {
         : "Belum ada",
     },
     {
-      label: "Validasi Admin",
-      done: normalizedStatus === "approved" || normalizedStatus === "rejected",
-      icon: <CheckCircle2 size={16} />,
-      desc:
-        normalizedStatus === "approved"
-          ? `Disetujui (+${report.poin_didapat} Poin)`
-          : normalizedStatus === "rejected"
-            ? "Ditolak"
-            : "Menunggu...",
+      label: isAutoResolved ? "Resolusi Otomatis AI" : "Validasi Admin",
+      done: normalizedStatus === "approved" || normalizedStatus === "rejected" || isAutoResolved,
+      icon: isAutoResolved ? <Sparkles size={16} /> : <CheckCircle2 size={16} />,
+      desc: adminStepDesc(),
     },
   ];
 
@@ -270,8 +291,11 @@ function ReportDetail({ report }: { report: ReportData }) {
               <div
                 className={`absolute left-[-24px] mt-0.5 w-[22px] h-[22px] rounded-full flex items-center justify-center z-10 ${
                   step.done
-                    ? normalizedStatus === "rejected" && i === steps.length - 1
+                    ? (normalizedStatus === "rejected" || normalizedStatus === "auto_rejected") &&
+                      i === steps.length - 1
                       ? "bg-rose-500 text-white"
+                      : normalizedStatus === "auto_approved" && i === steps.length - 1
+                      ? "bg-sky-500 text-white"
                       : "bg-emerald-500 text-white"
                     : "bg-gray-200 text-gray-400"
                 }`}
@@ -553,7 +577,7 @@ export default function ReportHistory() {
 
                       {/* Text */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <p className="text-sm font-bold text-gray-800 truncate capitalize">
                             {report.kategori_user}
                           </p>
@@ -561,12 +585,18 @@ export default function ReportHistory() {
                         </div>
                         <p className="text-xs text-gray-400 mt-0.5">
                           {timeAgo(report.created_at)}
-                          {normalizedStatus === "approved" && (
+                          {(normalizedStatus === "approved" || normalizedStatus === "auto_approved") && (
                             <span className="text-emerald-600 font-bold ml-1.5">
                               +{report.poin_didapat} Poin
                             </span>
                           )}
                         </p>
+                        {report.lokasi && (
+                          <p className="flex items-center gap-1 text-xs text-gray-400 mt-0.5">
+                            <MapPin size={11} className="text-emerald-500 shrink-0" />
+                            <span className="truncate">{report.lokasi}</span>
+                          </p>
+                        )}
                       </div>
 
                       {/* Chevron */}

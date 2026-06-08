@@ -112,6 +112,7 @@ export async function POST(request: Request) {
     const kategoriAi = formData.get("kategori_ai");
     const classifyResultRaw = formData.get("classify_result");
     const verifyResultRaw = formData.get("verify_result");
+    const lokasiRaw = formData.get("lokasi");
 
     if (!(beforeImage instanceof File)) {
       return NextResponse.json(
@@ -137,6 +138,11 @@ export async function POST(request: Request) {
         ? kategoriAi.trim()
         : null;
 
+    const lokasiStr =
+      typeof lokasiRaw === "string" && lokasiRaw.trim()
+        ? lokasiRaw.trim()
+        : null;
+
     // 1. Create waste_report record with status pending
     const inserted = await supabaseAdmin
       .from("waste_reports")
@@ -146,6 +152,7 @@ export async function POST(request: Request) {
         kategori_user: kategoriUserStr,
         kategori_ai: kategoriAiStr,
         status_validasi: "pending",
+        lokasi: lokasiStr,
       })
       .select("report_id")
       .single();
